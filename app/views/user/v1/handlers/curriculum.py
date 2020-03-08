@@ -1,8 +1,78 @@
 #coding=utf-8
 
-from flask import Blueprint
+from flask import Blueprint,jsonify,request
+from OnlineClassroom.app.forms.curriculum_forms import *
+from OnlineClassroom.app.models.use_collections import *
+from OnlineClassroom.app.models.account import *
+from OnlineClassroom.app.models.use_collections import *
+from OnlineClassroom.app.serialzietion.res_dict import *
+from OnlineClassroom.app.utils.get_token import *
 
 curriculum = Blueprint("curriculum_api_v1",__name__)
+
+
+
+
+# 添加视频收藏
+@curriculum.route("/add/collection",methods=["POST"])
+def add_collection():
+
+    form = add_collection_form()
+    if not form.validate_for_api():
+        return form.BindErrToRes("")
+
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    uc = use_collections(int(aid),form.cid.data)
+    if not uc.add_use_collection():
+        return jsonify(add_err("课程收藏异常"))
+
+    return jsonify(commen_success_res("课程收藏成功",""))
+
+
+# 查看收藏视频
+@curriculum.route("/show/collection",methods=["GET"])
+def show_collection():
+
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    uc = use_collections.query.filter_by(aid=int(aid)).first()
+    # uc.query_use_curriculms()
+
+    print("route >> :",uc)
+
+    return ""
+
+
+
+
+
+
+
+
+
+
+
+# 取消(删除)收藏
+@curriculum.route("/del/collection",methods=["DELETE","POST"])
+def del_collection():
+    return ""
+
+
+
+
+
+
+
+
+
+
 
 
 

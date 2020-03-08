@@ -1,6 +1,11 @@
 # coding=utf-8
-from flask import Blueprint
 
+from flask import Blueprint,jsonify,request
+from OnlineClassroom.app.forms.user_forms import *
+from OnlineClassroom.app.models.account import Account as account
+from OnlineClassroom.app.ext.plugins import db
+from OnlineClassroom.app.serialzietion.res_dict import *
+from OnlineClassroom.app.utils.get_token import check_token,create_token,requst_get_token
 
 user = Blueprint('user_api_v1',__name__)
 
@@ -19,46 +24,99 @@ user = Blueprint('user_api_v1',__name__)
 # 登录
 @user.route("login",methods=["POST"])
 def login():
-    return "login"
+
+    form = login_form()
+    if not form.validate_for_api():
+        return form.BindErrToRes("")
+
+    u = account.query.filter(account.username==form.username.data).first()
+    if not u.CheckPassword(form.pswd.data):
+        return jsonify(pawd_check_err(""))
+
+    # todo 返回token 塞入数据为用户id
+    token = create_token(u.aid)
+
+    item = {
+        "username":u.username,
+        "nickname":u.nickname,
+        "token":token
+    }
+
+    return jsonify(commen_success_res("",item))
 
 # 注册
 @user.route("registry",methods=["POST"])
 def registry():
-    return ""
+
+    form = registry_form()
+    if not form.validate_for_api():
+        return form.BindErrToRes("")
+
+    u = account(form.nickname.data,form.username.data,form.pswd.data,form.info.data)
+
+    if not u.registryAccount():
+        return jsonify(registry_account_existence_res(""))
+
+    return jsonify(registry_success_res())
+
 
 # 退出登录
 @user.route("logout",methods=["POST"])
 def logout():
-    return ""
+    token = requst_get_token()
+    print(token)
+    return jsonify(commen_success_res("",""))
 
 
 
-# 修改个人信息
+# 修改个人信息 (昵称,info)
 @user.route("/modify/info",methods=["POST"])
 def modify_user():
-    return ""
+
+    form = modify_info_form()
+    if not form.validate_for_api():
+        return form.BindErrToRes("")
+
+
+    token = requst_get_token()
+    ok,aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    u = account.query.filter(account.aid==int(aid)).first()
+    if not u.modify_user_info(form.nickname.data,form.info.data):
+        return jsonify(modify_err(""))
+
+    return jsonify(commen_success_res("修改信息成功",""))
 
 # 修改密码
 @user.route("/modify/password",methods=["POST"])
 def modify_user_password():
-    return ""
 
-# 添加视频收藏
-@user.route("/add/collection",methods=["POST"])
-def add_collection():
-    return ""
+    form = modify_pswd_form()
+    if not form.validate_for_api():
+        return form.BindErrToRes("")
+
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    u = account.query.filter(account.aid == int(aid)).first()
+
+    if not u.modify_pswd(form.old_pswd.data,form.new_pswd.data):
+        return jsonify(modify_err(""))
+
+    return jsonify(commen_success_res("密码修改成功",""))
 
 
-# 查看收藏视频
-@user.route("/show/collection",methods=["GET"])
-def show_collection():
-    return ""
 
 
-# 取消(删除)收藏
-@user.route("/del/collection",methods=["DELETE","POST"])
-def del_collection():
-    return ""
+
+
+
+
+
 
 
 

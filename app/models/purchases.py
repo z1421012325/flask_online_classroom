@@ -20,8 +20,8 @@ CREATE TABLE `purchases` (
 
 class Purchases(db.Model):
     __tablename__ = "purchases"
-    cid = db.Column(db.Integer,db.ForeignKey("curriculums.cid"),comment="外键 课程id")
-    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"),comment="外键 用户id")
+    cid = db.Column(db.Integer,db.ForeignKey("curriculums.cid"),primary_key=True,comment="外键 课程id")
+    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"),primary_key=True,comment="外键 用户id")
 
     status = db.Column(db.Integer,comment="订单状态,默认为0未支付 支付为1")
     price = db.Column(db.Float(10,2),comment="订单当时价格,数量不考虑因为是类似网易云课堂这种 只能买一份")

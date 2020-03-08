@@ -20,8 +20,8 @@ CREATE TABLE `shopping_carts` (
 class ShoppingCarts(db.Model):
     __tablename__ = "shopping_carts"
 
-    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"), comment="外键 用户id")
-    cid = db.Column(db.Integer,db.ForeignKey("curriculums.cid"),comment="外键 课程id")
+    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"),primary_key=True, comment="外键 用户id")
+    cid = db.Column(db.Integer,db.ForeignKey("curriculums.cid"),primary_key=True,comment="外键 课程id")
     number = db.Column(db.Integer,default=1)
     create_at = db.Column(db.DateTime,comment="创建时间")
 

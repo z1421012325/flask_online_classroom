@@ -17,7 +17,7 @@ CREATE TABLE `money` (
 class Money(db.Model):
     __tablename__ = "money"
 
-    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"), comment="外键用户表id,唯一")
+    aid = db.Column(db.Integer,db.ForeignKey("accounts.aid"), primary_key=True,comment="外键用户表id,唯一")
     money = db.Column(db.Float(10,2), default=0.00, comment="金钱")
     version = db.Column(db.Integer, comment="乐观锁,版本控制")
 

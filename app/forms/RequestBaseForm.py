@@ -2,7 +2,7 @@
 
 from flask import request
 from wtforms import Form
-from OnlineClassroom.app.err.BindValidateErr import BindValidateErr
+from OnlineClassroom.app.serialzietion.res_dict import BindValidateErr
 
 # request data 基础验证器
 class RequestBaseForm(Form):

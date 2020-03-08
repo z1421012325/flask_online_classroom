@@ -20,8 +20,8 @@ CREATE TABLE `curriculum_comments` (
 """
 class CurriculumComments(db.Model):
     __tablename__ = "curriculum_comments"
-    cid = db.Column(db.Integer, db.ForeignKey("curriculums.cid"),comment="外键 课程id")
-    uid = db.Column(db.Integer, db.ForeignKey("accounts.aid"),comment="外键 用户id")
+    cid = db.Column(db.Integer, db.ForeignKey("curriculums.cid"),primary_key=True,comment="外键 课程id")
+    uid = db.Column(db.Integer, db.ForeignKey("accounts.aid"),primary_key=True,comment="外键 用户id")
     number = db.Column(db.Integer,comment="评价分数")
     comment = db.Column(db.String(300), comment="评价")
     create_at = db.Column(db.DateTime)
