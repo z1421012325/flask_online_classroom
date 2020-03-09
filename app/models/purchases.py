@@ -1,5 +1,5 @@
 # coding=utf-8
-
+import datetime
 from OnlineClassroom.app.ext.plugins import db
 
 """
@@ -26,7 +26,7 @@ class Purchases(db.Model):
     status = db.Column(db.Integer,comment="订单状态,默认为0未支付 支付为1")
     price = db.Column(db.Float(10,2),comment="订单当时价格,数量不考虑因为是类似网易云课堂这种 只能买一份")
     number = db.Column(db.String(40),comment="uuid流水号")
-    create_at = db.Column(db.DateTime,comment="创建时间")
+    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="创建时间")
 
     def __repr__(self):
         return "数据库{}".format(self.__tablename__)

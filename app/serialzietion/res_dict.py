@@ -41,6 +41,8 @@ def BindValidateErr(msg):
     return json.dumps(res_item)
 
 
+
+
 # 密码错误
 def pawd_check_err(msg):
     if len(msg) == 0:

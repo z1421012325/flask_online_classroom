@@ -3,7 +3,7 @@
 
 import jwt,time
 from flask import current_app,request
-from OnlineClassroom.app import create_app
+
 
 
 
@@ -23,12 +23,7 @@ def get_secret_key():
         if len(SECRET_KEY) == 0:
             SECRET_KEY = default_secret_key
     except Exception as e:
-        try:
-            SECRET_KEY = create_app().config.get("SECRET_KEY")
-            if len(SECRET_KEY) == 0:
-                SECRET_KEY = default_secret_key
-        except Exception as e:
-            SECRET_KEY = default_secret_key
+        SECRET_KEY = default_secret_key
     return SECRET_KEY
 
 # 从http请求的header中得到token
@@ -47,7 +42,7 @@ def create_token(aid):
     }
 
     token = jwt.encode(payload,key, algorithm=default_algorithm)
-    return token
+    return str(token,"utf-8")
 
 
 def check_token(token):

@@ -30,7 +30,10 @@ class config():
     DEBUG           = False
     TESTING         = False
 
-    SECRET_KEY      = 'SD15DFG1G4D231X86HF1GDSF{}cxCV156DSRFCVDFG'.format(os.urandom(10))
+    SECRET_KEY      = 'SD15DFG1G4D231X86HF1GDSF{}cxCV156DSRFCVDFG'  # .format(os.urandom(10))
+
+
+
     # 是否开启wtf表单 防范csrf攻击
     WTF_CSRF_ENABLED = False
 

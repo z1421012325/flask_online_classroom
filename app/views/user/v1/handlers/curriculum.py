@@ -19,7 +19,7 @@ def add_collection():
 
     form = add_collection_form()
     if not form.validate_for_api():
-        return form.BindErrToRes("")
+        return jsonify(form.bindErr)
 
     token = requst_get_token()
     ok, aid = check_token(token)
@@ -119,7 +119,14 @@ def curriculum_recommend(cid):
 # 该老师其他教学课程
 @curriculum.route("/other",methods=["GET"])
 def curriculum_other():
-    return "{}".format()
+    return "{}".format(1)
+
+
+
+
+
+
+
 
 
 
@@ -133,6 +140,9 @@ def get_oss_token():
 # 新增视频 保存上传视频(老师)url
 @curriculum.route("/save/new/video",methods=["POST"])
 def save_new_video():
+
+
+
     return "{}".format(1)
 
 

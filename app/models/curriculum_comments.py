@@ -1,6 +1,6 @@
 # coding=utf-8
 
-
+import datetime
 from OnlineClassroom.app.ext.plugins import db
 
 """
@@ -24,7 +24,7 @@ class CurriculumComments(db.Model):
     uid = db.Column(db.Integer, db.ForeignKey("accounts.aid"),primary_key=True,comment="外键 用户id")
     number = db.Column(db.Integer,comment="评价分数")
     comment = db.Column(db.String(300), comment="评价")
-    create_at = db.Column(db.DateTime)
+    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow())
     delete_at = db.Column(db.DateTime)
 
     def __repr__(self):

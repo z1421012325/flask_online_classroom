@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import datetime
 from OnlineClassroom.app.ext.plugins import db
 
 from .catalog import Catalog
@@ -30,7 +31,7 @@ class Curriculums(db.Model):
     price = db.Column(db.Float(10, 2), default=0.0)
     info = db.Column(db.Text)
     cimage = db.Column(db.String(250))
-    create_at = db.Column(db.DateTime)
+    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow())
     delete_at = db.Column(db.DateTime)
 
     catalogs = db.relationship(Catalog,backref="curriculum")

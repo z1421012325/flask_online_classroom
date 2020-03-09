@@ -1,5 +1,6 @@
 # coding=utf-8
 
+import datetime
 from sqlalchemy import and_,or_
 from werkzeug.security import check_password_hash,generate_password_hash
 from OnlineClassroom.app.ext.plugins import db
@@ -40,7 +41,7 @@ class Account(db.Model):
     pswd        = db.Column(db.String(255),nullable=False,comment="密码")
     status      = db.Column(db.Integer,comment="身份状态")
     info        = db.Column(db.TEXT,comment="一些额外的信息")
-    create_at   = db.Column(db.DateTime,comment="创建时间")
+    create_at   = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="创建时间")
 
 
     # sqlalchemy orm特有的关系条件,不存在数据库表中,只是在存在实例中

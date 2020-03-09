@@ -10,16 +10,6 @@ from OnlineClassroom.app.utils.get_token import check_token,create_token,requst_
 user = Blueprint('user_api_v1',__name__)
 
 
-# @user.before_request
-# def wrapper():
-#     print(request.path)
-#     is_found = True
-#     if is_found is False:
-#         return jsonify("not found")
-#     return None
-
-
-
 
 # 登录
 @user.route("login",methods=["POST"])
@@ -27,7 +17,7 @@ def login():
 
     form = login_form()
     if not form.validate_for_api():
-        return form.BindErrToRes("")
+        return jsonify(form.bindErr)
 
     u = account.query.filter(account.username==form.username.data).first()
     if not u.CheckPassword(form.pswd.data):
@@ -44,13 +34,15 @@ def login():
 
     return jsonify(commen_success_res("",item))
 
+
+
 # 注册
 @user.route("registry",methods=["POST"])
 def registry():
 
     form = registry_form()
     if not form.validate_for_api():
-        return form.BindErrToRes("")
+        return jsonify(form.bindErr)
 
     u = account(form.nickname.data,form.username.data,form.pswd.data,form.info.data)
 
@@ -58,6 +50,7 @@ def registry():
         return jsonify(registry_account_existence_res(""))
 
     return jsonify(registry_success_res())
+
 
 
 # 退出登录
@@ -68,14 +61,13 @@ def logout():
     return jsonify(commen_success_res("",""))
 
 
-
 # 修改个人信息 (昵称,info)
 @user.route("/modify/info",methods=["POST"])
 def modify_user():
 
     form = modify_info_form()
     if not form.validate_for_api():
-        return form.BindErrToRes("")
+        return jsonify(form.bindErr)
 
 
     token = requst_get_token()
@@ -89,13 +81,19 @@ def modify_user():
 
     return jsonify(commen_success_res("修改信息成功",""))
 
+
+
+
+
+
+
 # 修改密码
 @user.route("/modify/password",methods=["POST"])
 def modify_user_password():
 
     form = modify_pswd_form()
     if not form.validate_for_api():
-        return form.BindErrToRes("")
+        return jsonify(form.bindErr)
 
     token = requst_get_token()
     ok, aid = check_token(token)
@@ -104,7 +102,7 @@ def modify_user_password():
 
     u = account.query.filter(account.aid == int(aid)).first()
 
-    if not u.modify_pswd(form.old_pswd.data,form.new_pswd.data):
+    if not u.modify_pswd(form.old.data,form.new.data):
         return jsonify(modify_err(""))
 
     return jsonify(commen_success_res("密码修改成功",""))

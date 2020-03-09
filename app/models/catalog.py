@@ -1,7 +1,8 @@
 # coding=utf-8
 
+import datetime
 from OnlineClassroom.app.ext.plugins import db
-# from OnlineClassroom.app.models.account import Account
+
 
 """
 课程目录
@@ -23,7 +24,7 @@ class Catalog(db.Model):
     cat_id = db.Column(db.Integer,db.ForeignKey("curriculums.cid"), primary_key=True,comment="外键 课程id")
     name = db.Column(db.String(50),nullable=False,comment="课程目录名称")
     url = db.Column(db.String(255),nullable=False,comment="目录地址")
-    create_at = db.Column(db.DateTime,comment="一个课程多个目录,根据时间排序")
+    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="一个课程多个目录,根据时间排序")
     delete_at = db.Column(db.DateTime,comment="删除时间,软删除")
 
     def __repr__(self):

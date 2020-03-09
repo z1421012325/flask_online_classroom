@@ -1,5 +1,5 @@
 # coding=utf-8
-
+import datetime
 from OnlineClassroom.app.ext.plugins import db
 
 """
@@ -20,7 +20,7 @@ CREATE TABLE `extracts` (
 class Extracts(db.Model):
     __tablename__ = "extracts"
     eid = db.Column(db.Integer, primary_key=True, comment="外键 课程id")
-    create_at = db.Column(db.DateTime, comment="创建时间")
+    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(), comment="创建时间")
     t_money = db.Column(db.Float(10,2), comment="提取金额")
     divide = db.Column(db.Float(10, 2),default=0.05, comment="站点分成,默认为5%")
     actual_money = db.Column(db.Float(10, 2), comment="实际提成")

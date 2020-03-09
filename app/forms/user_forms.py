@@ -29,5 +29,5 @@ class modify_info_form(RequestBaseForm):
 
 # 修改账号密码
 class modify_pswd_form(RequestBaseForm):
-    old_pswd = PasswordField("old",validators=[DataRequired(),Length(min=8,max=50)])
-    new_pswd = PasswordField("new", validators=[DataRequired(), Length(min=8, max=50)])
+    old = StringField("old",validators=[DataRequired(),Length(min=8,max=50)])
+    new = StringField("new", validators=[DataRequired(), Length(min=8, max=50)])
