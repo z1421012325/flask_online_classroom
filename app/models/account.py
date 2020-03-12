@@ -61,7 +61,7 @@ class Account(db.Model):
     RegisteredUsersStudentStatus = 2       # 注册用户(學生)
     BannedUsersStatus            = 10      # 封禁用户
 
-    def __init__(self,nickname,username,pswd,info):
+    def __init__(self,nickname=None,username=None,pswd=None,info=None,aid=None):
         self.nickname = nickname
         self.username = username
         self.pswd = pswd
@@ -89,13 +89,6 @@ class Account(db.Model):
 
     # 注册
     def registryAccount(self):
-        # u = self.query.filter(self.username==self.username).first()
-        # print(u)
-        # if u.username == self.username:
-        #     print(u.username,self.username)
-        #     print(" ------存在对等----\n ----------")
-        #     return False
-
         self.EncryptionPassword()
         if not self.is_commit():
             return False
@@ -139,4 +132,21 @@ class Account(db.Model):
 
 
 
+    # 是否为老师身份
+    def is_UsersTeacherStatus(self):
+        return self.status == self.RegisteredUsersTeacherStatus
+    # 是否为学生身份
+    def is_UsersStudentStatus(self):
+        return self.status == self.RegisteredUsersStudentStatus
 
+
+    def serializetion_item(self):
+        item = {
+            "aid":self.aid,
+            "nickname": self.nickname,
+            "username": self.username,
+            "info": self.info,
+            "status": self.status,
+            "create_at": self.create_at,
+        }
+        return item

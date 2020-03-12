@@ -1,14 +1,34 @@
 # coding=utf-8
 
-from flask import Blueprint,jsonify,request
+from flask import Blueprint,jsonify,request,url_for
 from OnlineClassroom.app.forms.user_forms import *
 from OnlineClassroom.app.models.account import Account as account
-from OnlineClassroom.app.ext.plugins import db
-from OnlineClassroom.app.serialzietion.res_dict import *
+from OnlineClassroom.app.models.shopping_carts import *
+
+from OnlineClassroom.app.serializetion.res_dict import *
 from OnlineClassroom.app.utils.get_token import check_token,create_token,requst_get_token
 
 user = Blueprint('user_api_v1',__name__)
 
+@user.before_request
+def filter_is_token():
+
+    list_not_check_token_router = [
+        url_for("login"),
+        url_for("registry"),
+        url_for("get_user_info"),
+    ]
+
+    # not_filter = ["login", "registry", "register"]
+    for p in list_not_check_token_router:
+        if p in request.path:
+            return None
+
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if ok:
+        return None
+    return jsonify(token_err(""))
 
 
 # 登录
@@ -34,8 +54,6 @@ def login():
 
     return jsonify(commen_success_res("",item))
 
-
-
 # 注册
 @user.route("registry",methods=["POST"])
 def registry():
@@ -51,15 +69,12 @@ def registry():
 
     return jsonify(registry_success_res())
 
-
-
 # 退出登录
 @user.route("logout",methods=["POST"])
 def logout():
     token = requst_get_token()
     print(token)
     return jsonify(commen_success_res("",""))
-
 
 # 修改个人信息 (昵称,info)
 @user.route("/modify/info",methods=["POST"])
@@ -81,12 +96,6 @@ def modify_user():
 
     return jsonify(commen_success_res("修改信息成功",""))
 
-
-
-
-
-
-
 # 修改密码
 @user.route("/modify/password",methods=["POST"])
 def modify_user_password():
@@ -107,102 +116,71 @@ def modify_user_password():
 
     return jsonify(commen_success_res("密码修改成功",""))
 
-
-
-
-
-
-
-
-
-
-
-
 # 用户信息
-@user.route("/info/<int:uid>",methods=["GET"])
-def get_user_info(uid):
-    return "{}".format(uid)
+@user.route("/info/<int:aid>",methods=["GET"])
+def get_user_info(aid):
 
+    u = account.query.filter_by(aid=aid).first()
+    item = u.serializetion_item()
 
-# 查看学习的视频
+    return jsonify(commen_success_res("",item))
+
+# 查看购买的视频
 @user.route("/show/study",methods=["GET"])
 def get_show_study():
-    return "{}".format(1)
 
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
 
+    shop = ShoppingCarts(aid=aid)
+    items = shop.get_purchase_curriculums()
+
+    return jsonify(commen_success_res("",items))
 
 # 发表评论
 @user.route("/add/comment",methods=["POST"])
 def add_comment():
-    return "{}".format(1)
 
-# 查看评论
+    form = add_comment_form()
+    if not form.validate_for_api():
+        return form.bindErr
+
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    comment = CurriculumComments(aid=aid,cid=form.cid.data,number=form.number.data,comment=form.comment.data)
+    if not comment.save():
+        return jsonify(add_err(""))
+
+    return jsonify(commen_success_res("评论添加成功",""))
+
+# 查看发表的评论
 @user.route("/see/comment",methods=["GET"])
 def see_comment():
-    return "{}".format(1)
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
 
+    comment = CurriculumComments(aid=aid)
+    items = comment.query_user_comments()
+
+    return jsonify(commen_success_res("",items))
 
 # 删除评论
 @user.route("/del/comment",methods=["DELETE"])
 def del_comment():
-    return "{}".format(1)
 
+    form = del_comment_form()
+    if not form.validate_for_api():
+        return form.bindErr
 
+    comment = CurriculumComments(id=form.id.data)
+    if not comment.del_comment():
+        return jsonify(del_err("删除评论失败"))
 
-# 给予aliyun-oss凭证 让前端去aliyun-oss上传
-@user.route("/get/oss/token",methods=["POST"])
-def get_oss_token():
-    return "{}".format(1)
-
-# 保存用户头像
-@user.route("/save/portrait",methods=["POST"])
-def save_portrait():
-    return "{}".format(1)
-
-
-# 查看购物车
-@user.route("/show/shopping",methods=["GET"])
-def show_shopping():
-    return "{}".format(1)
-
-
-
-
-
-
-
-
-# 购物车下单状态更改(购买) 添加订单
-@user.route("/modify/shopping/status",methods=["POST"])
-def modify_shopping_status():
-    return "{}".format(1)
-
-
-# 查看课程购买记录(学生or老师)
-@user.route("/show/curriculum/record",methods=["GET"])
-def show_curriculum_record():
-    return "{}".format(1)
-
-
-# 查看课程被购买记录(老师) 含价格为0的课程
-@user.route("/show/teacher/curriculum/record",methods=["GET"])
-def show_teacher_curriculum_record():
-    return "{}".format(1)
-
-
-# 查看拥有金额(老师)
-@user.route("/have/money",methods=["GET"])
-def have_money():
-    return "{}".format(1)
-
-
-# 提成金额(老师)  zfb
-@user.route("/extract/money",methods=["GET"])
-def extract_money():
-    return "{}".format(1)
-
-
-# 提成记录(老师)
-@user.route("/extract/record",methods=["GET"])
-def extract_record():
-    return "{}".format(1)
+    return jsonify(commen_success_res("删除评论成功",""))

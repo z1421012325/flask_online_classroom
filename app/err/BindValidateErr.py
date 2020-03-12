@@ -30,7 +30,20 @@ modify_msg = "修改异常"
 add_code = 10004
 add_msg =  "添加异常"
 
+# 删除异常
+del_code = 10005
+del_msg =  "删除异常"
+
+
 
 # token 错误
-token_code = 10005
+token_code = 10006
 token_msg = "token异常"
+
+# 身份异常
+identity_code = 10007
+identity_msg = "身份异常"
+
+# 购物异常
+shop_code = 10008
+shop_msg = "购物异常"

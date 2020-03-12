@@ -66,9 +66,30 @@ def add_err(msg):
     res_item = commen_res(add_code,msg,None)
     return res_item
 
+# 删除信息异常
+def del_err(msg):
+    if len(msg) == 0:
+        msg = del_msg
+    res_item = commen_res(del_code,msg,None)
+    return res_item
+
 # token异常
 def token_err(msg):
     if len(msg) == 0:
         msg = token_msg
     res_item = commen_res(token_code,msg,None)
+    return res_item
+
+# 身份异常
+def identity_err(msg):
+    if len(msg) == 0:
+        msg = identity_msg
+    res_item = commen_res(identity_code,msg,None)
+    return res_item
+
+# 购买异常
+def shop_err(msg):
+    if len(msg) == 0:
+        msg = shop_msg
+    res_item = commen_res(shop_code,msg,None)
     return res_item

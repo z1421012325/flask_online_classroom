@@ -1,9 +1,9 @@
 # coding=utf-8
 import datetime
 from OnlineClassroom.app.ext.plugins import db
-
+from .curriculums import *
 """
-购物车
+购买记录
 CREATE TABLE `shopping_carts` (
   `aid` int DEFAULT NULL COMMENT '外键 用户id',
   `cid` int DEFAULT NULL COMMENT '外键 课程id',
@@ -25,5 +25,73 @@ class ShoppingCarts(db.Model):
     number = db.Column(db.Integer,default=1)
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="创建时间")
 
+    curriculum = db.relationship(Curriculums,backref="shops")
+
     def __repr__(self):
         return "数据库{}".format(self.__tablename__)
+
+    def __init__(self,aid=None,cid=None):
+        self.aid =aid
+        self.cid = cid
+        self.number = 1
+        self.create_at = datetime.datetime.utcnow()
+
+
+    def is_record(self):
+        self.query.filter_by(aid=self.aid,cid=self.cid).first()
+        if self.number != 1:
+            if not self.curriculum.price <= float(0):
+                return False
+            return True
+        return True
+
+    def get_curriculum__catalog(self):
+
+        items = {}
+        list_time = []
+
+        catalogs = self.curriculum.catalogs
+
+        for catalog in catalogs:
+            item = catalog.serializetion_itme()
+            list_time.append(item)
+
+        items["datas"] = list_time
+        items["len"] = len(catalogs)
+        return items
+
+    def is_purchase(self):
+        shop = self.query.filter_by(aid=self.aid,cid=self.cid).first()
+        return shop.number == 1
+
+    def save(self):
+        self.number = 1
+        self.create_at = datetime.datetime.utcnow()
+        return self.is_commit()
+
+        # commit
+
+    def is_commit(self):
+        try:
+            db.session.add(self)
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.rollback()
+            return False
+
+    def get_purchase_curriculums(self):
+        shop = self.query.filter_by(aid=self.aid).first()
+        cus = shop.curriculum
+
+        items = {}
+        list_item = []
+
+        for cu in cus:
+            cu.completion_oss_img_url()
+            list_item.append(cu.serialize_item())
+
+        items["datas"] = list_item
+        items["len"] = len(list_item)
+
+        return items

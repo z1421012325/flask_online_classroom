@@ -2,7 +2,7 @@
 
 from flask import request
 from wtforms import Form
-from OnlineClassroom.app.serialzietion.res_dict import BindValidateErr
+from OnlineClassroom.app.serializetion.res_dict import BindValidateErr
 
 # request data 基础验证器
 class RequestBaseForm(Form):
@@ -34,4 +34,7 @@ class RequestBaseForm(Form):
     # bind数据没有根据绑定的要求所返回的json数据
     bindErr = None
     def BindErrToRes(self,msg):
+        self.bindErr = BindValidateErr(msg)
+
+    def NoneErrToRes(self,msg):
         self.bindErr = BindValidateErr(msg)

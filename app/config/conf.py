@@ -8,19 +8,14 @@ def load_env():
 
 
 def init_db_url():
-
-    env_dist = os.environ
-
     db_username = load_env().get("MYSQL_DB_USERNAME","root")
     db_password = load_env().get("MYSQL_DB_PASSWORD","zyms90bdcs")
     db_port     = load_env().get("MYSQL_DB_PORT","localhost")
     db_host     = load_env().get("MYSQL_DB_HOST","3306")
     db_dataname = load_env().get("MYSQL_DB_PASSWORD","online_lassroom")
 
-
     sql_address = "mysql+mysqlconnector://{}:{}@{}:{}/{}".format(db_username,db_password,db_port,
     db_host,db_dataname)
-
     # return "mysql+pymysql://root:zyms90bdcs@localhost:3306/login"
     # return "mysql+mysqlconnector://root:zyms90bdcs@localhost:3306/login"
     return sql_address
@@ -41,6 +36,7 @@ class config():
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
 
+    # email
     MAIL_SERVER     = 'smtp.qq.com'
     MAIL_PORT       = 465
     MAIL_USE_SSL    = True
@@ -48,6 +44,13 @@ class config():
     MAIL_USERNAME   = load_env().get("EMAIL_USERNAME","'1421012325@qq.com'")
     MAIL_PASSWORD   = load_env().get("EMAIL_PASSWORD","'osmxjrjphhydjfcj'")
 
+    # 阿里云oss密钥
+    ACCESS_KEY_ID = "LTAI4FtjynxBKcAmF9JKtGDs"
+    ACCESS_KEY_SECRET = "LeWv80kDekE4HYSg0CQzsznlyv3h8S"
+    # 地域节点
+    ENDPOINT = "oss-cn-shenzhen.aliyuncs.com"
+    # oss容器名称
+    BUCKET_NAME = "demo-online-classroom"
 
 
 class DevelopConfig(config):
