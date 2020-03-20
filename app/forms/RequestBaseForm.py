@@ -8,15 +8,22 @@ from OnlineClassroom.app.serializetion.res_dict import BindValidateErr
 class RequestBaseForm(Form):
     # 解析请求参数
     def __init__(self):
-        if request.method == "GET":
+
+        req_mothod = request.method
+        req_type = request.headers.get("Content-Type")
+        if req_type ==None:
+            req_type = "application/json"
+
+        if req_mothod == "GET":
             data = request.args.to_dict()
             super(RequestBaseForm, self).__init__(data=data)
 
         # 解析非get请求的参数,如果是json则request.get_json()得到数据...
-        if "application/json" in request.headers.get("Content-Type") and request.method not in "GET":
+        if "application/json" in req_type and req_mothod not in "GET":
             data = request.get_json(silent=True)
             super(RequestBaseForm, self).__init__(data=data)
-        elif "application/json" not in request.headers.get("Content-Type") and request.method not in "GET":
+
+        elif "application/json" not in req_type and req_mothod not in "GET":
             # application/x-www-form-urlencoded    or    multipart/form-data
             data = request.form.to_dict()
             super(RequestBaseForm, self).__init__(data=data)

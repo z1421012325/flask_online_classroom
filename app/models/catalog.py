@@ -22,8 +22,8 @@ from OnlineClassroom.app.utils.aliyun_oss import *
 class Catalog(db.Model):
     __tablename__ = "catalog"
 
-    id = db.Column(db.Integer,primary_key=True)
-    cid = db.Column(db.Integer, db.ForeignKey("curriculums.cid"), comment="外键 课程id")
+    id = db.Column(db.Integer,primary_key=True, comment="目录id")
+    cat_id = db.Column(db.Integer, db.ForeignKey("curriculums.cid"), comment="外键 课程id")
     name = db.Column(db.String(50),nullable=False,comment="课程目录名称")
     url = db.Column(db.String(255),nullable=False,comment="目录地址")
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="一个课程多个目录,根据时间排序")
@@ -33,22 +33,21 @@ class Catalog(db.Model):
         return "数据库{}".format(self.__tablename__)
 
 
-    def __init__(self,id=None,cid=None,name=None,url=None):
+    def __init__(self,id=None,cat_id=None,name=None,url=None):
         self.id = id
-        self.cid = cid
+        self.cat_id = cat_id
         self.name = name
         self.url = url
-        self.create_at = datetime.datetime.utcnow()
+        self.create_at = datetime.datetime.now()
 
 
     def query_catalogs(self):
-        catalogs = self.query.filter_by(cid=self.cid, delete_at=None).all()
+        catalogs = self.query.filter_by(cat_id=self.cat_id, delete_at=None).all()
 
         items = {}
         list_time = []
 
         for catalog in catalogs:
-            catalog.completion_oss_img_url()
             list_time.append(catalog.serializetion_itme())
 
         items["datas"] = list_time
@@ -56,25 +55,42 @@ class Catalog(db.Model):
         return items
 
     def query_catalog_object(self):
-        return self.query.filter_by(cid=self.cid,id=self.id, delete_at=None).first()
+        return self.query.filter_by(cat_id=self.cat_id,id=self.id, delete_at=None).first()
 
     def del_catalog(self):
-        self.delete_at = datetime.datetime.utcnow()
-        return self.is_commit()
+        self.delete_at = datetime.datetime.now()
+        return self.up_commit()
 
+    def up_commit(self):
+        try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False
 
     def completion_oss_img_url(self):
-        self.cimage = get_img_oss_url(self.cimage,86400/2)
+        _url = get_img_oss_url(self.url,86400/2)
+        return _url
 
     def serializetion_itme(self):
         item = {
             "id" : self.id,
-            "cat_id" : self.cid,
+            "cat_id" : self.cat_id,
             "name" : self.name,
-            "url" : self.url,
-            "create_at":self.create_at0,
+            "url" : self.completion_oss_img_url(),
+            "ct":self.serializetion_time_json_is_null(self.create_at),
+            "dt":self.serializetion_time_json_is_null(self.delete_at)
         }
         return item
+
+    def serializetion_time_json_is_null(self, time):
+        if time == None:
+            return ""
+        if isinstance(time, datetime.datetime) or isinstance(time, datetime.time):
+            return time.strftime('%Y-%m-%d %H:%M:%S')
+        return ""
+
 
     def is_commit(self):
         try:
@@ -82,6 +98,6 @@ class Catalog(db.Model):
             db.session.commit()
             return True
         except Exception as e:
-            db.rollback()
+            db.session.rollback()
             return False
 

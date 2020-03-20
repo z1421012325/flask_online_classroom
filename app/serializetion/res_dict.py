@@ -93,3 +93,18 @@ def shop_err(msg):
         msg = shop_msg
     res_item = commen_res(shop_code,msg,None)
     return res_item
+
+# 查询异常
+def query_err(msg):
+    if len(msg) == 0:
+        msg = query_msg
+    res_item = commen_res(query_code,msg,None)
+    return res_item
+
+
+# 数值异常
+def value_err(msg):
+    if len(msg) == 0:
+        msg = value_msg
+    res_item = commen_res(value_code,msg,None)
+    return res_item

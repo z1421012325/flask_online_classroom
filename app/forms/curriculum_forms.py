@@ -50,7 +50,7 @@ class add_follow_form(RequestBaseForm):
 
 #  删除目录视频(老师)
 class del_video_catalog_form(RequestBaseForm):
-    id = IntegerField("cid", validators=[DataRequired()])
+    id = IntegerField("id", validators=[DataRequired()])
     cid = IntegerField("cid", validators=[DataRequired()])
 
 

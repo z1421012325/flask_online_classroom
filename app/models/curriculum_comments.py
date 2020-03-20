@@ -3,8 +3,12 @@
 import datetime
 from OnlineClassroom.app.ext.plugins import db
 
+
 from .account import *
 #   UNIQUE KEY `ac_id` (`aid`,`cid`),
+
+#   KEY `curriculum_comments_ibfk_1` (`aid`),
+#   KEY `curriculum_comments_ibfk_2` (`cid`),
 """
 课程评价
 CREATE TABLE `curriculum_comments` (
@@ -15,11 +19,11 @@ CREATE TABLE `curriculum_comments` (
   `comment` varchar(300) DEFAULT NULL COMMENT '评价',
   `create_at` datetime DEFAULT now() COMMENT '创建时间',
   `delete_at` datetime DEFAULT NULL COMMENT '删除时间',
-  KEY `curriculum_comments_ibfk_1` (`aid`),
-  KEY `curriculum_comments_ibfk_2` (`cid`),
+  UNIQUE KEY `ac_id` (`aid`,`cid`),
   CONSTRAINT `curriculum_comments_ibfk_1` FOREIGN KEY (`aid`) REFERENCES `accounts` (`aid`),
   CONSTRAINT `curriculum_comments_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `curriculums` (`cid`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
 """
 class CurriculumComments(db.Model):
     __tablename__ = "curriculum_comments"
@@ -31,7 +35,6 @@ class CurriculumComments(db.Model):
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow())
     delete_at = db.Column(db.DateTime)
 
-    user = db.relationship(Account,backref="comments")
 
     def __repr__(self):
         return "数据库{}".format(self.__tablename__)
@@ -44,18 +47,24 @@ class CurriculumComments(db.Model):
         self.id=id
 
 
-    def get_comment_all(self):
-        comments = self.query.filter_by(cid=self.cid,delete_at=None).all()
+    def get_comment_all(self,page=1,number=10):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        comments = self.query.filter_by(cid=self.cid,delete_at=None).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
-        for comment in comments:
+        for comment in comments.items:
             item = comment.serializetion_item()
             list_item.append(item)
 
         items["datas"] = list_item
-        items["len"] = len(comments)
+        items["len"] = len(comments.items)
+        items["pages"] = comments.pages
+        items["total"] = comments.total
 
         return items
 
@@ -67,9 +76,17 @@ class CurriculumComments(db.Model):
             "name":self.user.nickname,
             "number": self.number,
             "comment": self.comment,
-            "create_at": self.create_at,
+            "ct": self.serializetion_time_json_is_null(self.create_at),
+            "dt":self.serializetion_time_json_is_null(self.delete_at)
         }
         return item
+
+    def serializetion_time_json_is_null(self, time):
+        if time == None:
+            return ""
+        if isinstance(time, datetime.datetime) or isinstance(time, datetime.time):
+            return time.strftime('%Y-%m-%d %H:%M:%S')
+        return ""
 
 
     def is_commit(self):
@@ -78,7 +95,7 @@ class CurriculumComments(db.Model):
             db.session.commit()
             return True
         except Exception as e:
-            db.rollback()
+            db.session.rollback()
             return False
 
 

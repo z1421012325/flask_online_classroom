@@ -47,3 +47,12 @@ identity_msg = "身份异常"
 # 购物异常
 shop_code = 10008
 shop_msg = "购物异常"
+
+# 查询异常
+query_code =  10009
+query_msg = "查询异常"
+
+
+# 数值异常
+value_msg = "数值异常"
+value_code = 10010

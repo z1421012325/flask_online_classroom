@@ -1,10 +1,14 @@
 # coding=utf-8
 
 import datetime
+from sqlalchemy import and_
 from OnlineClassroom.app.ext.plugins import db
 
 from .catalog import Catalog
 from .curriculum_comments import CurriculumComments
+# from .shopping_carts import ShoppingCarts
+
+from OnlineClassroom.app.utils.sql_result import sql_result_to_dict
 from OnlineClassroom.app.utils.aliyun_oss import get_img_oss_url
 
 """
@@ -32,15 +36,15 @@ class Curriculums(db.Model):
     price = db.Column(db.Float(10, 2), default=0.0, comment=" 价格")
     info = db.Column(db.Text, comment=" 课程介绍")
     cimage = db.Column(db.String(250), comment="课程封面 阿里云oos直传")
-    create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(), comment="创建时间")
+    create_at = db.Column(db.DateTime,default=datetime.datetime.now(), comment="创建时间")
     delete_at = db.Column(db.DateTime, comment="删除时间")
 
     catalogs = db.relationship(Catalog,backref="curriculum")
     comments = db.relationship(CurriculumComments,backref="curriculum")
-
+    # purchase_records = db.relationship(ShoppingCarts,backref="curriculum")
 
     def __repr__(self):
-        return "数据库{}".format(self.__tablename__)
+        return "数据库{} {}-{}-{}-{}".format(self.__tablename__,self.aid,self.cid,self.cname,self.cimage)
 
     def __init__(self,cid=None,cname=None,aid=None,price=None,info=None,cimage=None):
         self.cname = cname
@@ -48,13 +52,15 @@ class Curriculums(db.Model):
         self.price = price
         self.info = info
         self.cimage = cimage
+        self.cid = cid
 
 
     def completion_oss_img_url(self):
-        self.cimage = get_img_oss_url(self.cimage,86400/2)
+        _img = get_img_oss_url(self.cimage,86400/2)
+        return _img
 
     def save(self):
-        self.create_at = datetime.datetime.utcnow()
+        self.create_at = datetime.datetime.now()
         return self.is_commit()
 
     def is_commit(self):
@@ -63,9 +69,16 @@ class Curriculums(db.Model):
             db.session.commit()
             return True
         except Exception as e:
-            db.rollback()
+            db.session.rollback()
             return False
 
+    def up_commit(self):
+        try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False
 
     # 查询多个课程并返回dict
     def query_curriculums_is_not_del(self):
@@ -74,87 +87,177 @@ class Curriculums(db.Model):
     # 查询单个课程并返回dict
     def query_also_serialize(self):
         cc = self.query_curriculum_is_not_del()
-        return self.serialize_item()
+        return cc.serialize_item()
 
     def query_curriculum_is_not_del(self):
-        cc = self.query.filter_by(aid=self.aid, delete_at=None).first()
-        cc.completion_oss_img_url()
+        cc = self.query.filter_by(cid=self.cid, delete_at=None).first()
+        if cc == None:
+            return False
         return cc
 
     def serialize_item(self):
         item = {
+            "aid":self.aid,
+            "nickname":self.json_relation_user_nickname_is_null(),
             "cid": self.cid,
             "cname": self.cname,
-            "aid": self.aid,
-            "price": self.price,
+            "price": str(self.price),
             "info": self.info,
-            "cimage": self.cimage,
-            "create_at": self.create_at,
-            "delete_at":self.delete_at
+            "cimage": self.completion_oss_img_url(),
+            "create_at": self.json_create_at_is_null(),
+            "delete_at":self.json_delete_at_is_null()
         }
         return item
 
+    def json_relation_user_nickname_is_null(self):
+        if self.user == None:
+            return ""
+        return self.user.nickname
+
+
+    def json_delete_at_is_null(self):
+        if self.delete_at == None :
+            return ""
+        return self.delete_at.strftime('%Y-%m-%d %H:%M:%S')
+
+    def json_create_at_is_null(self):
+        if self.create_at == None:
+            return ""
+        return self.create_at.strftime('%Y-%m-%d %H:%M:%S')
+
     def query_modify_curriculum_people(self):
-        self.query.filter_by(cid=self.cid,delete_at=None).first()
-        return self.aid
+        c = self.query.filter_by(cid=self.cid,delete_at=None).first()
+        return c
 
     def modify_curriculum_info(self,name,price,info,cimage):
-        self.cname = name
-        self.price = price
-        self.info = info
-        self.cimage = cimage
+        if len(name)!= 0:
+            self.cname = name
+        if len(price) != 0:
+            self.price = price
+        if len(info) != 0:
+            self.info = info
+        if len(cimage) != 0:
+            self.cimage = cimage
+        return self.up_commit()
 
-        return self.is_commit()
 
+    def recommend_curriculums(self,page=1,number=10):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
 
-    def recommend_curriculums(self):
-        current = self.query.filter_by(cid=self.cid).first()
-        aid = current.aid
-
-        cus = self.query.filter_by(aid=aid).all()
+        currents = self.query.filter_by(aid=self.aid).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
-        for cu in cus:
-            item = cu.serialize_item()
-            list_item.append(item)
+        for c in currents.items:
+            list_item.append(c.serialize_item())
 
         items["datas"] = list_item
-        items["len"] = len(cus)
+        items["len"] = len(currents.items)
+        items["pages"] = currents.pages
+        items["total"] = currents.total
 
         return items
 
 
     def is_identity(self,aid=None):
         cc = self.query.filter_by(cid=self.cid).first()
+        if cc == None:
+            return False
         return int(cc.aid) == int(aid)
 
 
     def del_curriculums(self):
-        self.delete_at = datetime.datetime.utcnow()
-        return self.is_commit()
+        c = self.query.filter_by(cid=self.cid).first()
+        c.delete_at = datetime.datetime.now()
+        return c.up_commit()
 
 
-    def query_del_videos(self):
+    def query_del_videos(self,page=1,number=20):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+
+        ccs = self.query.filter(Curriculums.aid==self.aid,Curriculums.delete_at!=None).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
-        ccs = self.query.filter(self.aid==self.aid,self.delete_at!=None).all()
-        for cc in ccs:
-            cc.completion_oss_img_url()
-            item = cc.serialize_item()
-            list_item.append(item)
+        for cc in ccs.items:
+            list_item.append(cc.serialize_item())
 
         items['datas'] = list_item
-        items['len'] = len(ccs)
+        items['len'] = len(ccs.items)
+        items["pages"] = ccs.pages
+        items["total"] = ccs.total
+
 
         return items
 
 
     def recovery_curriculum(self):
         cc = self.query.filter_by(cid=self.cid,aid=self.aid).first()
+        if cc == None:
+            return False
         cc.delete_at = None
-        return self.is_commit()
+        return cc.up_commit()
 
+
+    def get_purchase_records(self,page=1,number=10):
+        if page== None:
+            page = 1
+        if number == None:
+            number = 10
+
+        c = self.query.filter_by(aid=self.aid).first()
+
+        sql = "select u.aid as uid,u.nickname as nk,u.status as st,c.aid as c_aid,c.cname as name,c.price as price,c.cimage as img,c.create_at as at " \
+              "from " \
+              "shopping_carts as shop " \
+              "join " \
+              "accounts as u " \
+              "on " \
+              "u.aid = shop.aid " \
+              "join curriculums as c " \
+              "on " \
+              "shop.cid = c.cid " \
+              "where shop.cid in (select cid from curriculums where aid = {}) limit {},{}}".format(c.aid,page-1,page*number)
+        results = db.session.execute(sql).fetchall()
+
+        items = sql_result_to_dict(results)
+
+        return items
+
+
+
+    def query_like_field_all(self,key,page=1,number=20):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        results = self.query.filter(Curriculums.cname.like("%" + key + "%")).paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for result in results.items:
+            list_item.append(result.serialize_item())
+
+        items["datas"] = list_item
+        items["len"] = len(results.items)
+        items["nexts"] = results.pages
+        items["total"] = results.total
+
+        return items
+
+    def up_commit(self):
+        try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False

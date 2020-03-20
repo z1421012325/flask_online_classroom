@@ -1,7 +1,7 @@
 # coding=utf-8
 
 import datetime
-from sqlalchemy import and_,or_
+from sqlalchemy import and_,or_,func
 from werkzeug.security import check_password_hash,generate_password_hash
 from OnlineClassroom.app.ext.plugins import db
 
@@ -9,7 +9,7 @@ from .extracts import Extracts
 from .money import Money
 from .purchases import Purchases
 from .shopping_carts import ShoppingCarts
-from .use_collections import use_collections
+from .use_collections import Use_collections
 from .curriculum_comments import CurriculumComments
 from .curriculums import Curriculums
 
@@ -41,7 +41,7 @@ class Account(db.Model):
     pswd        = db.Column(db.String(255),nullable=False,comment="密码")
     status      = db.Column(db.Integer,comment="身份状态")
     info        = db.Column(db.TEXT,comment="一些额外的信息")
-    create_at   = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="创建时间")
+    create_at   = db.Column(db.DateTime,default=datetime.datetime.now(),comment="创建时间")
 
 
     # sqlalchemy orm特有的关系条件,不存在数据库表中,只是在存在实例中
@@ -53,8 +53,8 @@ class Account(db.Model):
     extracts = db.relationship(Extracts,backref="user", lazy="dynamic")
     money = db.relationship(Money,backref="user", lazy="dynamic")
     purchases = db.relationship(Purchases,backref="user", lazy="dynamic")
-    shopping_carts = db.relationship(ShoppingCarts,backref="user", lazy="dynamic")
-    use_collections = db.relationship(use_collections, backref="user", lazy="dynamic")
+    shops = db.relationship(ShoppingCarts,backref="user", lazy="dynamic")
+    use_collections = db.relationship(Use_collections, backref="_user", lazy="dynamic")
 
     DefaultUserAccountStatus     = 0       # 用户状态 0为未注册用户
     RegisteredUsersTeacherStatus = 1       # 注册用户(老師)
@@ -67,9 +67,10 @@ class Account(db.Model):
         self.pswd = pswd
         self.status  = self.RegisteredUsersStudentStatus
         self.info = info
+        self.aid=aid
 
     def __repr__(self):
-        return "数据库{}  {} --- {}".format(self.__tablename__,self.nickname,self.username)
+        return "数据库{}  {} --- {} ----- {}".format(self.__tablename__,self.nickname,self.username,self.aid)
 
 
 
@@ -87,13 +88,16 @@ class Account(db.Model):
 
 
 
-    # 注册
-    def registryAccount(self):
+    # 学生注册
+    def registryStudentAccount(self):
         self.EncryptionPassword()
-        if not self.is_commit():
-            return False
-        return True
+        return self.is_commit()
 
+    # 老师注册
+    def registryTeacherAccount(self):
+        self.status = self.RegisteredUsersTeacherStatus
+        self.EncryptionPassword()
+        return self.is_commit()
 
     # 修改信息
     def modify_user_info(self,nickname,info):
@@ -102,9 +106,8 @@ class Account(db.Model):
         if len(info) != 0:
             self.info = info
 
-        if not self.is_commit():
-            return False
-        return True
+        return self.is_commit()
+
 
 
     # 修改密码
@@ -114,9 +117,7 @@ class Account(db.Model):
 
         self.pswd = self.SetEncryptionPassword(new)
 
-        if not self.is_commit():
-            return False
-        return True
+        return self.is_commit()
 
 
     # commit
@@ -126,7 +127,7 @@ class Account(db.Model):
             db.session.commit()
             return True
         except Exception as e:
-            db.rollback()
+            db.session.rollback()
             return False
 
 
@@ -142,11 +143,45 @@ class Account(db.Model):
 
     def serializetion_item(self):
         item = {
-            "aid":self.aid,
+            "aid": self.aid,
             "nickname": self.nickname,
             "username": self.username,
             "info": self.info,
             "status": self.status,
-            "create_at": self.create_at,
+            "create_at": self.create_at.strftime('%Y-%m-%d %H:%M:%S'),
         }
         return item
+
+
+    def query_Teachers(self,page=1,number=10):
+        if page == None :
+            page = 1
+        if number == None:
+            number = 10
+
+        teachers = self.query.filter_by(status=self.RegisteredUsersTeacherStatus).paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for teacher in teachers.items:
+            list_item.append(teacher.serializetion_item())
+
+        items["datas"] = list_item
+        items["len"] = len(teachers.items)
+        items["nexts"] = teachers.pages
+        items["total"] = teachers.total
+
+        return items
+
+
+    def get_aid_user(self):
+        u = self.query.filter(Account.aid==self.aid).first()
+        return u.serializetion_item()
+
+
+    def get_aid_is_UsersTeacherStatus(self):
+        u = self.query.filter_by(aid=self.aid).first()
+        return u.is_UsersTeacherStatus()
+
+

@@ -35,7 +35,8 @@ class config():
     # 数据库操作时是否显示原始SQL语句
     SQLALCHEMY_ECHO = True
     SQLALCHEMY_TRACK_MODIFICATIONS = False
-
+    SQLALCHEMY_POOL_SIZE = 20
+    SQLALCHEMY_MAX_OVERFLOW =50
     # email
     MAIL_SERVER     = 'smtp.qq.com'
     MAIL_PORT       = 465

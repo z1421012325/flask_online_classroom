@@ -3,6 +3,9 @@ import datetime
 from OnlineClassroom.app.ext.plugins import db
 
 """
+
+PASS
+
 订单
 CREATE TABLE `purchases` (
   `cid` int DEFAULT NULL COMMENT '外键 课程id',

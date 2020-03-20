@@ -1,6 +1,6 @@
 # coding=utf-8
 
-from flask import Flask,request,jsonify
+from flask import Flask,jsonify
 
 from OnlineClassroom.app.config import conf
 from OnlineClassroom.app.ext import plugins
@@ -27,11 +27,16 @@ def create_app():
     @app.errorhandler(500)
     def app_500_err_res(err):
         print(err)
-        return "web err 500"
+        return jsonify({"code":50001,"msg":"500 bad not found"})
 
     @app.errorhandler(404)
     def app_404_err_res(err):
         print(err)
-        return "web err 404"
+        return jsonify({"code":40001,"msg":"404 bad not found"})
+
+    @app.errorhandler(405)
+    def app_500_err_res(err):
+        print(err)
+        return jsonify({"code": 40005, "msg": "405 bad not found"})
 
     return app

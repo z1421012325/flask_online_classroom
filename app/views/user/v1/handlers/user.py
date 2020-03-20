@@ -10,25 +10,26 @@ from OnlineClassroom.app.utils.get_token import check_token,create_token,requst_
 
 user = Blueprint('user_api_v1',__name__)
 
-@user.before_request
-def filter_is_token():
-
-    list_not_check_token_router = [
-        url_for("login"),
-        url_for("registry"),
-        url_for("get_user_info"),
-    ]
-
-    # not_filter = ["login", "registry", "register"]
-    for p in list_not_check_token_router:
-        if p in request.path:
-            return None
-
-    token = requst_get_token()
-    ok, aid = check_token(token)
-    if ok:
-        return None
-    return jsonify(token_err(""))
+# @user.before_request
+# def filter_is_token():
+#
+#     list_not_check_token_router = [
+#         url_for("login"),
+#         url_for("registry"),
+#         url_for("get_user_info"),
+#     ]
+#
+#     # not_filter = ["login", "registry", "register"]
+#     for p in list_not_check_token_router:
+#         print("url_for :> ",p)
+#         if p in request.path:
+#             return None
+#
+#     token = requst_get_token()
+#     ok, aid = check_token(token)
+#     if ok:
+#         return None
+#     return jsonify(token_err(""))
 
 
 # 登录
@@ -64,7 +65,7 @@ def registry():
 
     u = account(form.nickname.data,form.username.data,form.pswd.data,form.info.data)
 
-    if not u.registryAccount():
+    if not u.registryStudentAccount():
         return jsonify(registry_account_existence_res(""))
 
     return jsonify(registry_success_res())
@@ -75,6 +76,7 @@ def logout():
     token = requst_get_token()
     print(token)
     return jsonify(commen_success_res("",""))
+
 
 # 修改个人信息 (昵称,info)
 @user.route("/modify/info",methods=["POST"])
@@ -96,6 +98,7 @@ def modify_user():
 
     return jsonify(commen_success_res("修改信息成功",""))
 
+
 # 修改密码
 @user.route("/modify/password",methods=["POST"])
 def modify_user_password():
@@ -116,16 +119,24 @@ def modify_user_password():
 
     return jsonify(commen_success_res("密码修改成功",""))
 
+
+
+
+
+
 # 用户信息
 @user.route("/info/<int:aid>",methods=["GET"])
 def get_user_info(aid):
 
-    u = account.query.filter_by(aid=aid).first()
-    item = u.serializetion_item()
+    u = account(aid=aid)
+    item = u.get_aid_user()
 
     return jsonify(commen_success_res("",item))
 
-# 查看购买的视频
+
+
+
+# 查看购买的视频 todo 还没有购买记录
 @user.route("/show/study",methods=["GET"])
 def get_show_study():
 
@@ -138,6 +149,8 @@ def get_show_study():
     items = shop.get_purchase_curriculums()
 
     return jsonify(commen_success_res("",items))
+
+
 
 # 发表评论
 @user.route("/add/comment",methods=["POST"])
@@ -154,11 +167,11 @@ def add_comment():
 
     comment = CurriculumComments(aid=aid,cid=form.cid.data,number=form.number.data,comment=form.comment.data)
     if not comment.save():
-        return jsonify(add_err(""))
+        return jsonify(add_err("该课程已经评论或者评论异常"))
 
     return jsonify(commen_success_res("评论添加成功",""))
 
-# 查看发表的评论
+# 查看发表的评论  todo 还没有评论记录
 @user.route("/see/comment",methods=["GET"])
 def see_comment():
     token = requst_get_token()
@@ -171,7 +184,7 @@ def see_comment():
 
     return jsonify(commen_success_res("",items))
 
-# 删除评论
+# 删除评论 todo 还没有评论
 @user.route("/del/comment",methods=["DELETE"])
 def del_comment():
 

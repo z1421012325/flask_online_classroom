@@ -51,7 +51,7 @@ def check_token(token):
     payload = jwt.decode(token, key, algorithm=[default_algorithm])
 
     if int(time.time()) < int(payload["exp"]):
-        return True,payload["aid"]
+        return True,int(payload["aid"])
     return False, ""
 
 
