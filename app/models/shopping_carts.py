@@ -31,10 +31,8 @@ class ShoppingCarts(db.Model):
     price = db.Column(db.Float(10,2),default=0.00)
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow(),comment="创建时间")
 
-    curriculum = db.relationship(Curriculums,backref="shop")
+    _curriculum = db.relationship(Curriculums,backref="shop")
     # user = db.relationship(Account,backref="shops")
-
-
 
 
     def __repr__(self):
@@ -99,22 +97,6 @@ class ShoppingCarts(db.Model):
             db.session.rollback()
             return False
 
-    def get_purchase_curriculums(self):
-        shop = self.query.filter_by(aid=self.aid).first()
-        cus = shop.curriculum
-
-        items = {}
-        list_item = []
-
-        for cu in cus:
-            cu.completion_oss_img_url()
-            list_item.append(cu.serialize_item())
-
-        items["datas"] = list_item
-        items["len"] = len(list_item)
-
-        return items
-
     def serialize_item(self):
         item = {
             "aid":self.aid,
@@ -125,3 +107,23 @@ class ShoppingCarts(db.Model):
             "create_at":self.create_at
         }
         return item
+
+    def get_purchase_curriculums(self,page=1,number=10):
+        if page ==None:
+            page = 1
+        if number ==None:
+            number = 10
+
+        items = {}
+        list_item = []
+
+        shops = self.query.filter_by(aid=self.aid).paginate(int(page),int(number),False)
+        for shop in shops.items:
+            list_item.append(shop._curriculum.serialize_item())
+
+        items["datas"] = list_item
+        items["len"] = len(shops.items)
+        items["nexts"] = shops.pages
+        items["total"] = shops.total
+
+        return items

@@ -47,7 +47,7 @@ class CurriculumComments(db.Model):
         self.id=id
 
 
-    def get_comment_all(self,page=1,number=10):
+    def get_cid_comment_all(self, page=1, number=10):
         if page == None:
             page = 1
         if number == None:
@@ -68,12 +68,34 @@ class CurriculumComments(db.Model):
 
         return items
 
+    def get_aid_comment_all(self, page=1, number=10):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        comments = self.query.filter_by(aid=self.aid,delete_at=None).paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for comment in comments.items:
+            list_item.append(comment.serializetion_item())
+
+        items["datas"] = list_item
+        items["len"] = len(comments.items)
+        items["pages"] = comments.pages
+        items["total"] = comments.total
+
+        return items
+
+
     def serializetion_item(self):
         item = {
             "id":self.id,
             "aid":self.aid,
             "cid":self.cid,
             "name":self.user.nickname,
+            "c_name":self.curriculum.cname,
             "number": self.number,
             "comment": self.comment,
             "ct": self.serializetion_time_json_is_null(self.create_at),
@@ -98,6 +120,13 @@ class CurriculumComments(db.Model):
             db.session.rollback()
             return False
 
+    def up_commit(self):
+        try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False
 
     def save(self):
         if self.number == None:
@@ -106,22 +135,28 @@ class CurriculumComments(db.Model):
         return self.is_commit()
 
 
-    def query_user_comments(self):
-        comments = self.query.filter_by(aid=self.aid).all()
+    def query_user_comments(self,page=1,number=20):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+
+        comments = self.query.filter_by(aid=self.aid,delete_at=None).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
-        for comment in comments:
+        for comment in comments.items:
             list_item.append(comment.serializetion_item())
 
         items["datas"] = list_item
-        items["len"] = len(comments)
+        items["len"] = len(comments.items)
+        items["pages"] = comments.pages
+        items["total"] = comments.total
 
         return items
 
     def del_comment(self):
-        comment = self.query.filter_by(id=self.id).first()
+        comment = self.query.filter_by(id=self.id,aid=self.aid).first()
         comment.delete_at = datetime.datetime.utcnow()
-
-        return self.is_commit()
+        return comment.up_commit()

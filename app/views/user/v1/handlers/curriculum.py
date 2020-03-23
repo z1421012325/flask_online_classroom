@@ -20,29 +20,6 @@ from OnlineClassroom.app.utils.get_uuid import *
 curriculum_ = Blueprint("curriculum_api_v1", __name__)
 
 
-# @curriculum.before_request
-# def filter_is_token():
-#     list_not_check_token_router = [
-#         url_for("course_curriculum"),
-#         url_for("curriculum_recommend"),
-#         url_for("course_detail_curriculum"),
-#         url_for("course_comment"),
-#         url_for("curriculum_recommend"),
-#     ]
-#
-#     for p in list_not_check_token_router:
-#         print("url_for :> ",p)
-#         if p in request.path:
-#             return None
-#
-#     token = requst_get_token()
-#     ok, aid = check_token(token)
-#     if ok:
-#         return None
-#     return jsonify(token_err(""))
-
-
-
 # 添加视频收藏
 @curriculum_.route("/add/collection", methods=["POST"])
 def add_collection():
@@ -63,7 +40,7 @@ def add_collection():
     return jsonify(commen_success_res("课程收藏成功",""))
 
 
-# 查看收藏视频  todo 序列化返回哪里对sqlalchemy的relationship对其他模型数据也进入其中
+# 查看收藏视频
 @curriculum_.route("/show/collection", methods=["GET"])
 def show_collection():
 
@@ -122,7 +99,7 @@ def course_detail_curriculum(cid):
 def course_comment(cid):
 
     comment = CurriculumComments(cid=cid)
-    items = comment.get_comment_all(page=request.args.get("page",1),number=request.args.get("number",10))
+    items = comment.get_cid_comment_all(page=request.args.get("page", 1), number=request.args.get("number", 10))
 
     return jsonify(commen_success_res("",items))
 

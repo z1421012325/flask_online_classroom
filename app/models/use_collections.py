@@ -100,8 +100,7 @@ class Use_collections(db.Model):
         list_item = []
 
         for c in colls.items:
-            list_item.append(c.serializetion_json())
-
+            list_item.append(c._curriculum_.serialize_item())
 
         items["datas"] = list_item
         items["len"] = len(colls.items)
@@ -114,8 +113,8 @@ class Use_collections(db.Model):
         item = {
             "aid":self.aid,
             "cid": self.cid,
-            # "name":self.aid._user.nickname,
-            # "c_title":"",
+            "name":self._user.nickname,
+            "c_title":self._curriculum_.cname,
             "create_at": self.serializetion_time_json_is_null(self.create_at),
             "delete_at": self.serializetion_time_json_is_null(self.delete_at),
         }

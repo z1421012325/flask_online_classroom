@@ -44,7 +44,7 @@ def login():
     if not u.CheckPassword(form.pswd.data):
         return jsonify(pawd_check_err(""))
 
-    # todo 返回token 塞入数据为用户id
+    #  返回token 塞入数据为用户id
     token = create_token(u.aid)
 
     item = {
@@ -136,7 +136,7 @@ def get_user_info(aid):
 
 
 
-# 查看购买的视频 todo 还没有购买记录
+# 查看购买的视频
 @user.route("/show/study",methods=["GET"])
 def get_show_study():
 
@@ -146,7 +146,8 @@ def get_show_study():
         return jsonify(token_err(""))
 
     shop = ShoppingCarts(aid=aid)
-    items = shop.get_purchase_curriculums()
+    items = shop.get_purchase_curriculums(page=request.args.get("page",1),number=request.args.get("number",10))
+
 
     return jsonify(commen_success_res("",items))
 
@@ -171,28 +172,34 @@ def add_comment():
 
     return jsonify(commen_success_res("评论添加成功",""))
 
-# 查看发表的评论  todo 还没有评论记录
+# 查看发表的评论
 @user.route("/see/comment",methods=["GET"])
 def see_comment():
+
     token = requst_get_token()
     ok, aid = check_token(token)
     if not ok:
         return jsonify(token_err(""))
 
     comment = CurriculumComments(aid=aid)
-    items = comment.query_user_comments()
+    items = comment.query_user_comments(page=request.args.get("page",1),number=request.args.get("number",10))
 
     return jsonify(commen_success_res("",items))
 
-# 删除评论 todo 还没有评论
-@user.route("/del/comment",methods=["DELETE"])
+# 删除评论
+@user.route("/del/comment",methods=["DELETE","POST"])
 def del_comment():
 
     form = del_comment_form()
     if not form.validate_for_api():
         return form.bindErr
 
-    comment = CurriculumComments(id=form.id.data)
+    token = requst_get_token()
+    ok, aid = check_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    comment = CurriculumComments(id=form.id.data,aid=aid)
     if not comment.del_comment():
         return jsonify(del_err("删除评论失败"))
 

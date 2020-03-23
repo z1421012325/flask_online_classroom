@@ -15,15 +15,15 @@ def create_app():
     # 插件加载
     plugins.ext_init(app)
 
-
     # 蓝图加载...
-    # 后台路由
-    from OnlineClassroom.app.views import admin as admin_v1
-    admin_v1.init_blue(app)
-    # 面向用户的路由
-    from OnlineClassroom.app.views.user.v1 import registry_blue
+    from OnlineClassroom.app.views import registry_blue
     registry_blue.init_blue(app)
 
+
+
+
+
+    # err handler 处理
     @app.errorhandler(500)
     def app_500_err_res(err):
         print(err)

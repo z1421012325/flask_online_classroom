@@ -6,7 +6,7 @@ from OnlineClassroom.app.ext.plugins import db
 
 from .catalog import Catalog
 from .curriculum_comments import CurriculumComments
-# from .shopping_carts import ShoppingCarts
+from .use_collections import Use_collections
 
 from OnlineClassroom.app.utils.sql_result import sql_result_to_dict
 from OnlineClassroom.app.utils.aliyun_oss import get_img_oss_url
@@ -42,6 +42,8 @@ class Curriculums(db.Model):
     catalogs = db.relationship(Catalog,backref="curriculum")
     comments = db.relationship(CurriculumComments,backref="curriculum")
     # purchase_records = db.relationship(ShoppingCarts,backref="curriculum")
+    _use_collections = db.relationship(Use_collections,backref="_curriculum_")
+
 
     def __repr__(self):
         return "数据库{} {}-{}-{}-{}".format(self.__tablename__,self.aid,self.cid,self.cname,self.cimage)
@@ -233,31 +235,120 @@ class Curriculums(db.Model):
         return items
 
 
-
-    def query_like_field_all(self,key,page=1,number=20):
-        if page == None:
+    # order 默认查询排序  hot为(购买)热门排序,new 为最新排序
+    def query_like_field_all(self,key,page=1,number=20,order=None):
+        if key == None:
+            key = ""
+        if page == None or page<=0:
             page = 1
-        if number == None:
+        if number == None or number<=0:
             number = 10
-        results = self.query.filter(Curriculums.cname.like("%" + key + "%")).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
-        for result in results.items:
-            list_item.append(result.serialize_item())
+        if order == "hot":
+            results = self.sql_order_hot_results(key=key, page=page, number=number)
+            for result in results:
+                list_item.append(result)
+
+            count = int(self.sql_search_hot_key_data_total(key=key))
+            items["pages"] = int(count / number)
+            items["len"] = results.__len__()
+            items["total"] = count
+
+
+
+        elif order == "new":
+            results = self.sql_order_new_results(key=key, page=page, number=number)
+            for result in results:
+                list_item.append(result)
+
+            count = int(self.sql_search_new_key_data_total(key=key))
+            items["pages"] = int(count / number)
+            items["len"] = results.__len__()
+            items["total"] = count
+
+        else:
+            results = self.order_default_results(key=key, page=page, number=number)
+            for result in results.items:
+                list_item.append(result.serialize_item())
+
+            items["len"] = len(results.items)
+            items["pages"] = results.pages
+            items["total"] = results.total
+
 
         items["datas"] = list_item
-        items["len"] = len(results.items)
-        items["nexts"] = results.pages
-        items["total"] = results.total
 
         return items
 
-    def up_commit(self):
-        try:
-            db.session.commit()
-            return True
-        except Exception as e:
-            db.session.rollback()
-            return False
+    def order_default_results(self,key,page,number):
+        results = self.query.filter(Curriculums.cname.like("%" + key + "%")).paginate(int(page), int(number), False)
+        return results
+
+    def sql_order_hot_results(self, key, page, number):
+        sql = """
+            SELECT 
+                count(*) AS count ,sp.cid AS s_cid ,c.* 
+            FROM
+                shopping_carts AS sp 
+            join 
+                curriculums AS c 
+            ON 
+                sp.cid = c.cid 
+            WHERE 
+                c.delete_at IS NULL AND c.cname like '%{}%'
+            GROUP BY s_cid 
+            ORDER BY s_cid DESC 
+            limit {},{}
+        """.format(key,(page-1)*number,number)
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results,"cimage")
+
+        return items
+
+    def sql_order_new_results(self, key, page, number):
+        sql = """
+        SELECT 
+            * 
+        FROM 
+            curriculums as c
+        WHERE 
+            delete_at IS NULL AND cname LIKE '%{}%' 
+        ORDER BY create_at 
+        DESC limit {},{}
+        """.format(key,(page-1)*number,number)
+
+        results = db.session.execute(sql).fetchall()
+
+        items = sql_result_to_dict(results,"cimage")
+        return items
+
+
+    def sql_search_new_key_data_total(self, key):
+        sql = """
+        SELECT count(*) AS total FROM curriculums AS c WHERE c.delete_at IS NULL AND c.cname LIKE '%{}%'
+        """.format(key)
+
+        results = db.session.execute(sql).fetchall()
+        _total = sql_result_to_dict(results)
+        return _total[0].get("total")
+
+    def sql_search_hot_key_data_total(self, key):
+        sql = """
+        SELECT 
+                count(distinct c.cid) AS total 
+            FROM 
+                shopping_carts AS sp 
+            JOIN 
+                curriculums AS c 
+            ON 
+                sp.cid = c.cid 
+            WHERE 
+                c.delete_at is null and c.cname LIKE '%{}%'
+        """.format(key)
+
+        results = db.session.execute(sql).fetchall()
+        _total = sql_result_to_dict(results)
+        return _total[0].get("total")

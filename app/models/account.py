@@ -1,7 +1,6 @@
 # coding=utf-8
 
 import datetime
-from sqlalchemy import and_,or_,func
 from werkzeug.security import check_password_hash,generate_password_hash
 from OnlineClassroom.app.ext.plugins import db
 
@@ -12,6 +11,8 @@ from .shopping_carts import ShoppingCarts
 from .use_collections import Use_collections
 from .curriculum_comments import CurriculumComments
 from .curriculums import Curriculums
+
+from OnlineClassroom.app.utils.pswd_security import *
 
 """
 account
@@ -24,6 +25,11 @@ create table accounts (
     `status` tinyint default '0' comment '身份状态',
     `info` text comment '一些额外的信息',
     `create_at` datetime default now(),
+    
+    `admin_id` int comment '操作员工id',
+    `open_at` datetime comment '操作时间'
+    CONSTRAINT `admin_` FOREIGN KEY (`admin_id`) REFERENCES `admins_user` (`aid`),
+    
     UNIQUE KEY `nickname` (`nickname`),
     UNIQUE KEY `username` (`username`))
     ENGINE=InnoDB AUTO_INCREMENT=10000 DEFAULT CHARSET=utf8;
@@ -43,6 +49,8 @@ class Account(db.Model):
     info        = db.Column(db.TEXT,comment="一些额外的信息")
     create_at   = db.Column(db.DateTime,default=datetime.datetime.now(),comment="创建时间")
 
+    admin_aid   = db.Column(db.Integer,db.ForeignKey("admins_user.aid"),comment="操作员工id")
+    open_at     = db.Column(db.DateTime,comment="操作时间")
 
     # sqlalchemy orm特有的关系条件,不存在数据库表中,只是在存在实例中
     # 第一个参数为对应模型的class类名,第二个参数在对应的类中生成一个属性,关联到这个表
@@ -75,15 +83,14 @@ class Account(db.Model):
 
 
     def EncryptionPassword(self):
-        self.pswd = generate_password_hash(self.pswd)       # 简单的加密,没有加盐值
+        self.pswd = encryption(self.pswd)       # 简单的加密,没有加盐值
 
     @classmethod
     def SetEncryptionPassword(self,pswd):
-        return generate_password_hash(pswd)
+        return encryption(pswd)
 
     def CheckPassword(self,pswd):
-       return check_password_hash(self.pswd,pswd)
-
+        return check_pswd(self.pswd,pswd)
 
 
 
