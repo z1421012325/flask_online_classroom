@@ -44,7 +44,7 @@ def BindValidateErr(msg):
 
 
 # 密码错误
-def pawd_check_err(msg):
+def pswd_check_err(msg):
     if len(msg) == 0:
         msg = pswd_err_msg
     res_item = commen_res(pswd_err_code,msg,None)

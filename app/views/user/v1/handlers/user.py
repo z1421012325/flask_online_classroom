@@ -42,7 +42,7 @@ def login():
 
     u = account.query.filter(account.username==form.username.data).first()
     if not u.CheckPassword(form.pswd.data):
-        return jsonify(pawd_check_err(""))
+        return jsonify(pswd_check_err(""))
 
     #  返回token 塞入数据为用户id
     token = create_token(u.aid)
@@ -129,7 +129,7 @@ def modify_user_password():
 def get_user_info(aid):
 
     u = account(aid=aid)
-    item = u.get_aid_user()
+    item = u.get_aid_user_to_serializetion()
 
     return jsonify(commen_success_res("",item))
 

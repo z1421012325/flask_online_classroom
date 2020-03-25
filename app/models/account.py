@@ -13,6 +13,7 @@ from .curriculum_comments import CurriculumComments
 from .curriculums import Curriculums
 
 from OnlineClassroom.app.utils.pswd_security import *
+from OnlineClassroom.app.utils.sql_result import sql_result_to_dict
 
 """
 account
@@ -28,7 +29,7 @@ create table accounts (
     
     `admin_id` int comment '操作员工id',
     `open_at` datetime comment '操作时间'
-    CONSTRAINT `admin_` FOREIGN KEY (`admin_id`) REFERENCES `admins_user` (`aid`),
+    CONSTRAINT `admin_id` FOREIGN KEY (`admin_id`) REFERENCES `admins_user` (`aid`),
     
     UNIQUE KEY `nickname` (`nickname`),
     UNIQUE KEY `username` (`username`))
@@ -113,7 +114,7 @@ class Account(db.Model):
         if len(info) != 0:
             self.info = info
 
-        return self.is_commit()
+        return self.up_commit()
 
 
 
@@ -124,7 +125,7 @@ class Account(db.Model):
 
         self.pswd = self.SetEncryptionPassword(new)
 
-        return self.is_commit()
+        return self.up_commit()
 
 
     # commit
@@ -137,7 +138,13 @@ class Account(db.Model):
             db.session.rollback()
             return False
 
-
+    def up_commit(self):
+        try:
+            db.session.commit()
+            return True
+        except Exception as e:
+            db.session.rollback()
+            return False
 
 
     # 是否为老师身份
@@ -182,13 +189,95 @@ class Account(db.Model):
         return items
 
 
-    def get_aid_user(self):
+    def get_aid_user_to_serializetion(self):
         u = self.query.filter(Account.aid==self.aid).first()
         return u.serializetion_item()
 
+    def get_aid_user(self):
+        u = self.query.filter(Account.aid==self.aid).first()
+        return u
+
+    def prohibit_user(self,admin_aid):
+        u = self.get_aid_user()
+        u.status = self.BannedUsersStatus
+        u.admin_aid = admin_aid
+        u.open_at = datetime.datetime.now()
+        return u.up_commit()
+
+    def reduction_prohibit_user(self,admin_aid):
+
+        status = 0
+        u = self.query.filter_by(aid=self.aid).first()
+        if u == None:
+            return False
+
+        if len(u.curriculum) == 0:
+            status = self.RegisteredUsersStudentStatus
+        else:
+            status = self.RegisteredUsersTeacherStatus
+
+        u.status = status
+        u.admin_aid =admin_aid
+        u.open_at = datetime.datetime.now()
+        return u.up_commit()
+
+    def get_prohibit_users(self,page=1,number=10):
+        page if page ==None else 1
+        number if number == None else 10
+
+        users = self.query.filter(Account.status == self.BannedUsersStatus).paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for user in users.items:
+            list_item.append(user.serializetion_item())
+
+        items["datas"] = list_item
+        items["len"] = len(users.items)
+        items["nexts"] = users.pages
+        items["total"] = users.total
+
+        return items
 
     def get_aid_is_UsersTeacherStatus(self):
         u = self.query.filter_by(aid=self.aid).first()
         return u.is_UsersTeacherStatus()
 
 
+
+    def get_day_registry_count(self,day=10):
+        sql = "select " \
+              "DAte_format(u.create_at,'%Y-%m-%d') as dateDay,count(*) as countDay " \
+              "from accounts as u where u.status != 0 and u.status !=10 " \
+              "group by dateDay order by dateDay desc " \
+              "limit 0,{}".format(day)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items
+
+
+    def get_registry_counts(self):
+        count = self.query.filter.count()
+        return {"count":count}
+
+
+    def get_users(self,page=1,number=10):
+        page if page == None else 1
+        number if number == None else 10
+
+        users = self.query.filter.paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for user in users.items:
+            list_item.append(user.serializetion_item())
+
+        items["datas"] = list_item
+        items["len"] = len(users.items)
+        items["nexts"] = users.pages
+        items["total"] = users.total
+
+        return items

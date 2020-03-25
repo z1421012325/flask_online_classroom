@@ -56,7 +56,30 @@ def check_token(token):
 
 
 
+def create_admin_token(aid,usename,r_id):
+    key = get_secret_key()
 
+    payload = {
+        "iat":int(time.time()),
+        "exp":int(time.time()) + exp_time_unix,
+        "data":{
+            "aid":aid,
+            "username":usename,
+            "r_id":r_id
+        }
+    }
+
+    token = jwt.encode(payload,key, algorithm=default_algorithm)
+    return str(token,"utf-8")
+
+def check_admin_token(token):
+    key = get_secret_key()
+
+    payload = jwt.decode(token, key, algorithm=[default_algorithm])
+
+    if int(time.time()) < int(payload["exp"]):
+        return True,eval(payload["data"])
+    return False, ""
 
 if __name__ == '__main__':
     token = create_token(11111)

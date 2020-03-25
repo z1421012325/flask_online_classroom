@@ -3,12 +3,8 @@
 import datetime
 from OnlineClassroom.app.ext.plugins import db
 
-
 from .account import *
-#   UNIQUE KEY `ac_id` (`aid`,`cid`),
 
-#   KEY `curriculum_comments_ibfk_1` (`aid`),
-#   KEY `curriculum_comments_ibfk_2` (`cid`),
 """
 课程评价
 CREATE TABLE `curriculum_comments` (
@@ -19,6 +15,11 @@ CREATE TABLE `curriculum_comments` (
   `comment` varchar(300) DEFAULT NULL COMMENT '评价',
   `create_at` datetime DEFAULT now() COMMENT '创建时间',
   `delete_at` datetime DEFAULT NULL COMMENT '删除时间',
+  
+   `admin_id` int comment '操作员工id',
+   `open_at` datetime comment '操作时间'
+   CONSTRAINT `admin_id` FOREIGN KEY (`admin_id`) REFERENCES `admins_user` (`aid`),
+  
   UNIQUE KEY `ac_id` (`aid`,`cid`),
   CONSTRAINT `curriculum_comments_ibfk_1` FOREIGN KEY (`aid`) REFERENCES `accounts` (`aid`),
   CONSTRAINT `curriculum_comments_ibfk_2` FOREIGN KEY (`cid`) REFERENCES `curriculums` (`cid`)
@@ -35,6 +36,8 @@ class CurriculumComments(db.Model):
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow())
     delete_at = db.Column(db.DateTime)
 
+    admin_aid = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
+    open_at = db.Column(db.DateTime, comment="操作时间")
 
     def __repr__(self):
         return "数据库{}".format(self.__tablename__)

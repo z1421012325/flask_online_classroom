@@ -22,6 +22,11 @@ from OnlineClassroom.app.utils.aliyun_oss import get_img_oss_url
     `cimage` varchar(250) DEFAULT NULL COMMENT '阿里云oos直传',
     `create_at` datetime DEFAULT now() COMMENT '创建时间',
     `delete_at` datetime DEFAULT NULL COMMENT '删除时间',
+    
+    `admin_id` int comment '操作员工id',
+    `open_at` datetime comment '操作时间'
+    CONSTRAINT `admin_id` FOREIGN KEY (`admin_id`) REFERENCES `admins_user` (`aid`),
+    
     PRIMARY KEY (`cid`),
     KEY `u_id` (`uid`),
     CONSTRAINT `curriculums_ibfk_1` FOREIGN KEY (`uid`) REFERENCES `accounts` (`aid`)
@@ -38,6 +43,9 @@ class Curriculums(db.Model):
     cimage = db.Column(db.String(250), comment="课程封面 阿里云oos直传")
     create_at = db.Column(db.DateTime,default=datetime.datetime.now(), comment="创建时间")
     delete_at = db.Column(db.DateTime, comment="删除时间")
+
+    admin_aid = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
+    open_at = db.Column(db.DateTime, comment="操作时间")
 
     catalogs = db.relationship(Catalog,backref="curriculum")
     comments = db.relationship(CurriculumComments,backref="curriculum")
@@ -83,8 +91,24 @@ class Curriculums(db.Model):
             return False
 
     # 查询多个课程并返回dict
-    def query_curriculums_is_not_del(self):
-        pass
+    def query_curriculums_is_not_del(self,page=None,number=None):
+        page if page == None else 1
+        number if number == None else 10
+
+        items = {}
+        list_item = []
+
+        cs = self.query.filter_by(delete_at=None).paginate(int(page),int(number),False)
+
+        for c in cs.items:
+            list_item.append(c.serialize_item())
+
+        items["datas"] = list_item
+        items["len"] = len(cs.items)
+        items["pages"] = cs.pages
+        items["total"] = cs.total
+
+        return items
 
     # 查询单个课程并返回dict
     def query_also_serialize(self):
@@ -352,3 +376,36 @@ class Curriculums(db.Model):
         results = db.session.execute(sql).fetchall()
         _total = sql_result_to_dict(results)
         return _total[0].get("total")
+
+    def get_arbitrarily_curriculum_count(self,day):
+        # 处理一下,当前时间减去传递进来参数的天数时间,得到大于day_time的数据个数
+
+        if day == None:
+            day = 10
+        query_time = datetime.datetime.now() - datetime.timedelta(days=int(day))
+
+        count = self.query.filter(Curriculums.create_at>=query_time).count()
+
+        return {"count":count}
+
+    def get_arbitrarily_curriculum_is_del_count(self,day):
+
+        if day == None:
+            day = 10
+        query_time = datetime.datetime.now() - datetime.timedelta(days=int(day))
+
+        count = self.query.filter(Curriculums.create_at>=query_time,Curriculums.delete_at!=None).count()
+
+        return {"count":count}
+
+
+    def get_day_up_curriculums_count(self,day=10):
+        sql = "select " \
+              "DATE_FORMAT(c.create_at,'%Y-%m-%d') as dateDay,count(*) as countDay " \
+              "from " \
+              "curriculums as c " \
+              "group by dateDay order by dateDay desc limit 0,{}".format(day)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items

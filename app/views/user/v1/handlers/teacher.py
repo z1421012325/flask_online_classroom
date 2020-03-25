@@ -7,7 +7,7 @@ from OnlineClassroom.app.models.money import *
 from OnlineClassroom.app.models.extracts import *
 
 from OnlineClassroom.app.forms.teacher_forms import *
-from OnlineClassroom.app.forms.paginate import *
+from OnlineClassroom.app.forms.paginate_form import *
 
 from OnlineClassroom.app.serializetion.res_dict import *
 
