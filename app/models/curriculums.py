@@ -56,13 +56,14 @@ class Curriculums(db.Model):
     def __repr__(self):
         return "数据库{} {}-{}-{}-{}".format(self.__tablename__,self.aid,self.cid,self.cname,self.cimage)
 
-    def __init__(self,cid=None,cname=None,aid=None,price=None,info=None,cimage=None):
+    def __init__(self,cid=None,cname=None,aid=None,price=None,info=None,cimage=None,admin_aid=None):
         self.cname = cname
         self.aid = aid
         self.price = price
         self.info = info
         self.cimage = cimage
         self.cid = cid
+        self.admin_aid = admin_aid
 
 
     def completion_oss_img_url(self):
@@ -130,8 +131,8 @@ class Curriculums(db.Model):
             "price": str(self.price),
             "info": self.info,
             "cimage": self.completion_oss_img_url(),
-            "create_at": self.json_create_at_is_null(),
-            "delete_at":self.json_delete_at_is_null()
+            "create_at": self.json_time_is_null(self.create_at),
+            "delete_at":self.json_time_is_null(self.delete_at)
         }
         return item
 
@@ -140,16 +141,10 @@ class Curriculums(db.Model):
             return ""
         return self.user.nickname
 
-
-    def json_delete_at_is_null(self):
-        if self.delete_at == None :
+    def json_time_is_null(self,f_time):
+        if f_time == None:
             return ""
-        return self.delete_at.strftime('%Y-%m-%d %H:%M:%S')
-
-    def json_create_at_is_null(self):
-        if self.create_at == None:
-            return ""
-        return self.create_at.strftime('%Y-%m-%d %H:%M:%S')
+        return f_time.strftime('%Y-%m-%d %H:%M:%S')
 
     def query_modify_curriculum_people(self):
         c = self.query.filter_by(cid=self.cid,delete_at=None).first()
@@ -220,7 +215,6 @@ class Curriculums(db.Model):
         items['len'] = len(ccs.items)
         items["pages"] = ccs.pages
         items["total"] = ccs.total
-
 
         return items
 
@@ -409,3 +403,66 @@ class Curriculums(db.Model):
         results = db.session.execute(sql).fetchall()
         items = sql_result_to_dict(results)
         return items
+
+    def get_curriculums(self,page=1,number=10):
+        page if page == None else 1
+        number if number == None else 10
+
+        cs = self.query.filter.paginate(int(page),int(number),False)
+        items = {}
+        list_item = []
+
+        for c in cs.items:
+            list_item.append(c.serialize_item())
+
+        items['datas'] = list_item
+        items['len'] = len(cs.items)
+        items["pages"] = cs.pages
+        items["total"] = cs.total
+
+        return items
+
+
+    def get_del_curriculums(self,page=1,number=10):
+        page if page == None else 1
+        number if number == None else 10
+
+        cs = self.query.filter(Curriculums.delete_at!=None).paginate(int(page),int(number),False)
+        items = {}
+        list_item = []
+
+        for c in cs.items:
+            list_item.append(item = {
+                    "aid":c.aid,
+                    "nickname":c.json_relation_user_nickname_is_null(),
+                    "cid": c.cid,
+                    "cname": c.cname,
+                    "price": str(c.price),
+                    "info": c.info,
+                    "cimage": c.completion_oss_img_url(),
+                    "create_at": c.json_time_is_null(self.create_at),
+                    "delete_at":c.json_time_is_null(self.delete_at),
+                    "admin_aid":c.admin_aid,
+                    "open_at": c.json_time_is_null(self.open_at)
+            })
+
+        items['datas'] = list_item
+        items['len'] = len(cs.items)
+        items["pages"] = cs.pages
+        items["total"] = cs.total
+
+        return items
+
+    def admin_del_video(self,admin_aid):
+        c = self.query.filter_by(aid=self.aid).first()
+        c.delete_at = datetime.datetime.now()
+        c.admin_aid = admin_aid
+        c.open_at = datetime.datetime.now()
+        return c.up_commit()
+
+    def admin_adopt_video(self,admin_aid):
+        c = self.query.filter_by(aid=self.aid).first()
+        c.delete_at = None
+        c.admin_aid = admin_aid
+        c.open_at = datetime.datetime.now()
+        return c.up_commit()

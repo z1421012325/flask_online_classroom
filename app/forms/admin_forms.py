@@ -53,3 +53,20 @@ class del_prohibit_user_form(RequestBaseForm):
 # 解封用户
 class adopt_user_form(RequestBaseForm):
     aid = IntegerField("aid", validators=[DataRequired()])
+
+# 下架视频
+class admin_del_video_form(RequestBaseForm):
+    cid = IntegerField("cid", validators=[DataRequired()])
+
+
+# 恢复视频
+class admin_recovery_video_form(RequestBaseForm):
+    cid = IntegerField("cid", validators=[DataRequired()])
+
+# 删除评论
+class admin_del_comment_form(RequestBaseForm):
+    id = IntegerField("id", validators=[DataRequired()])
+
+# 恢复评论
+class admin_recovery_comment_form(RequestBaseForm):
+    id = IntegerField("id", validators=[DataRequired()])

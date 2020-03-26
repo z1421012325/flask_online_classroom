@@ -10,6 +10,8 @@ from OnlineClassroom.app.models.admin_user import *
 from OnlineClassroom.app.models.admin_role import *
 from OnlineClassroom.app.models.curriculums import *
 from OnlineClassroom.app.models.account import *
+from OnlineClassroom.app.models.curriculum_comments import *
+
 
 from OnlineClassroom.app.utils.get_token import *
 
@@ -305,38 +307,128 @@ def adopt_user():
 @admin.route("")
 def show_list_video():
 
+    form = page_form()
+
+    c = Curriculums()
+    items = c.get_curriculums(page=form.page.data,number=form.number.data)
+
+    return jsonify(commen_success_res("",items))
+
+# 查看下架视频
+@admin.route("")
+def show_del_list_video():
+
+    form = page_form()
+
+    c = Curriculums()
+    items = c.get_del_curriculums(page=form.page.data,number=form.number.data)
+
+    return jsonify(commen_success_res("",items))
 
 
-    pass
+
 
 # 下架视频
 @admin.route("")
 def del_video():
-    pass
+
+    form = admin_del_video_form()
+    if not form.validate_for_api():
+        return form.bindErr
+
+    token = requst_get_token()
+    ok, data = check_admin_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    c = Curriculums(cid=form.cid.data)
+    if not c.admin_del_video(admin_aid=int(data.get("aid"))):
+        return jsonify(modify_err("删除失败"))
+
+    return jsonify(commen_success_res("删除成功", ""))
 
 # 恢复视频
 @admin.route("")
 def adopt_video():
-    pass
+
+    form = admin_recovery_video_form()
+    if not form.validate_for_api():
+        return form.bindErr
+
+    token = requst_get_token()
+    ok, data = check_admin_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    c = Curriculums(aid=form.cid.data)
+    if not c.admin_adopt_video(admin_aid=int(data.get("aid"))):
+        return jsonify(modify_err("恢复视频失败"))
+
+    return jsonify(commen_success_res("恢复视频成功",""))
 
 
 # 查看评论
 @admin.route("")
 def show_comments():
-    pass
+
+    form = page_form()
+
+    comment = CurriculumComments()
+    items = comment.get_commnets(page=form.page.data,number=form.number.data)
+
+    return jsonify(commen_success_res("",items))
+
+
 # 删除评论
 @admin.route("")
 def del_comment():
-    pass
+
+    form = admin_del_comment_form()
+    if not form.validate_for_api():
+        return form.bindErr
+
+    token = requst_get_token()
+    ok, data = check_admin_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    comment = CurriculumComments(id=form.id.data)
+    if not comment.admin_del_comment(admin_aid=int(data.get("aid"))):
+        return jsonify(modify_err("删除评论失败"))
+
+    return jsonify(commen_success_res("删除评论成功",""))
+
+
+
 
 # 恢复评论
 @admin.route("")
 def adopt_comment():
-    pass
+    form = admin_del_comment_form()
+    if not form.validate_for_api():
+        return form.bindErr
+
+    token = requst_get_token()
+    ok, data = check_admin_token(token)
+    if not ok:
+        return jsonify(token_err(""))
+
+    comment = CurriculumComments(id=form.id.data)
+    if not comment.admin_recovery_comment(admin_aid=int(data.get("aid"))):
+        return jsonify(modify_err("恢复评论失败"))
+
+    return jsonify(commen_success_res("恢复评论成功",""))
+
+
+
+
 
 # 根据天数查看当天下单金额
 @admin.route("")
 def show_day_money_day():
+
+    
+
     pass
 
 # 根据月份查看当月下单金额

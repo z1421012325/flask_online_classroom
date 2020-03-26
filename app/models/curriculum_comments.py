@@ -163,3 +163,37 @@ class CurriculumComments(db.Model):
         comment = self.query.filter_by(id=self.id,aid=self.aid).first()
         comment.delete_at = datetime.datetime.utcnow()
         return comment.up_commit()
+
+
+    def get_commnets(self, page=1, number=10):
+        page if page ==None else 1
+        number if number == None else 10
+
+        comments = self.query.filter.paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for comment in comments.items:
+            list_item.append(comment.serializetion_item())
+
+        items["datas"] = list_item
+        items["len"] = len(comments.items)
+        items["pages"] = comments.pages
+        items["total"] = comments.total
+
+
+    def admin_del_comment(self,admin_aid):
+        comment = self.query.filter_by(id=self.id).first()
+
+        comment.delete_at = datetime.datetime.now()
+        comment.open_at = datetime.datetime.now()
+        comment.admin_aid = admin_aid
+        return comment.up_commit()
+
+    def admin_recovery_comment(self,admin_aid):
+        comment = self.query.filter_by(id=self.id).first()
+        comment.delete_at = None
+        comment.open_at = datetime.datetime.now()
+        comment.admin_aid = admin_aid
+        return comment.up_commit()
