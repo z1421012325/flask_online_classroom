@@ -76,3 +76,4 @@ class Money(db.Model):
         m = self.query.filter_by(aid=self.aid).first()
         return m.money
 
+

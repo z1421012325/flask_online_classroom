@@ -36,7 +36,7 @@ class CurriculumComments(db.Model):
     create_at = db.Column(db.DateTime,default=datetime.datetime.utcnow())
     delete_at = db.Column(db.DateTime)
 
-    admin_aid = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
+    admin_id = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
     open_at = db.Column(db.DateTime, comment="操作时间")
 
     def __repr__(self):
@@ -166,34 +166,50 @@ class CurriculumComments(db.Model):
 
 
     def get_commnets(self, page=1, number=10):
-        page if page ==None else 1
-        number if number == None else 10
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
 
-        comments = self.query.filter.paginate(int(page),int(number),False)
+        comments = self.query.filter().paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
-
         for comment in comments.items:
-            list_item.append(comment.serializetion_item())
+            item = {
+                "id": comment.id,
+                "aid": comment.aid,
+                "cid": comment.cid,
+                "name": comment.user.nickname,
+                "c_name": comment.curriculum.cname,
+                "number": comment.number,
+                "comment": comment.comment,
+                "ct": comment.serializetion_time_json_is_null(comment.create_at),
+                "dt": comment.serializetion_time_json_is_null(comment.delete_at)
+            }
+            list_item.append(item)
 
         items["datas"] = list_item
         items["len"] = len(comments.items)
         items["pages"] = comments.pages
         items["total"] = comments.total
 
+        return items
+
 
     def admin_del_comment(self,admin_aid):
         comment = self.query.filter_by(id=self.id).first()
+        if comment == None:
+            return False
 
         comment.delete_at = datetime.datetime.now()
         comment.open_at = datetime.datetime.now()
-        comment.admin_aid = admin_aid
+        comment.admin_id = admin_aid
         return comment.up_commit()
 
     def admin_recovery_comment(self,admin_aid):
         comment = self.query.filter_by(id=self.id).first()
         comment.delete_at = None
         comment.open_at = datetime.datetime.now()
-        comment.admin_aid = admin_aid
+        comment.admin_id = admin_aid
         return comment.up_commit()

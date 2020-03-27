@@ -127,3 +127,39 @@ class ShoppingCarts(db.Model):
         items["total"] = shops.total
 
         return items
+
+
+
+    def get_days_shop_effective_sum(self,day):
+        sql = """
+        select 
+        date_format(s.create_at,'%Y-%m-%d %H:%i:%S')as dateDay,sum(s.price)as moneyDay 
+        FROM shopping_carts as s 
+        group by dateDay 
+        order by dateDay desc limit 0,{}      
+        """.format(day)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items
+
+    def get_month_shop_effective_sum(self,month):
+        sql = """
+        select 
+        date_format(s.create_at,'%Y-%m')as dateMonth,sum(s.price)as moneyMonth 
+        FROM shopping_carts as s 
+        group by dateMonth
+        order by dateMonth desc limit 0,{}      
+        """.format(month)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items
+
+    def get_monerys(self):
+        sql = """
+        select sum(s.price)as moneys FROM shopping_carts as s 
+        """
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items[0]

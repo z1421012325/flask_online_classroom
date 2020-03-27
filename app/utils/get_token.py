@@ -78,7 +78,8 @@ def check_admin_token(token):
     payload = jwt.decode(token, key, algorithm=[default_algorithm])
 
     if int(time.time()) < int(payload["exp"]):
-        return True,eval(payload["data"])
+        print("\n\n  {}\n\n".format(payload["data"]))
+        return True,eval(str(payload["data"]))
     return False, ""
 
 if __name__ == '__main__':

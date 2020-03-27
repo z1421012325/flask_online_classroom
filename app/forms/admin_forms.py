@@ -8,7 +8,7 @@ from wtforms.validators import DataRequired,Length
 class registry_form(RequestBaseForm):
     username = StringField("username",validators=[DataRequired(),Length(min=2,max=20)])
     pswd = PasswordField("pswd",validators=[DataRequired(),Length(min=8,max=50)])
-    aid = IntegerField("aid", validators=[])
+    rid = IntegerField("rid", validators=[])
 
 
 # 登录表单
@@ -26,7 +26,6 @@ class modify_pswd_form(RequestBaseForm):
 # 激活员工账号
 class activation_user_status_form(RequestBaseForm):
     aid = IntegerField("aid", validators=[DataRequired()])
-    grade = IntegerField("grade", validators=[DataRequired()])
 
 
 
@@ -34,16 +33,6 @@ class activation_user_status_form(RequestBaseForm):
 class modify_user_status_form(RequestBaseForm):
     aid = IntegerField("aid", validators=[DataRequired()])
     grade = IntegerField("grade", validators=[DataRequired()])
-
-
-# 根据天数查看当天视频上传个数 使用参数控制返回数据范围 1 - 365
-class show_curriculum_count_day_form(RequestBaseForm):
-    day = IntegerField("day", validators=[])
-
-
-# 每天上传总数
-class show_up_curriculum_count_form(RequestBaseForm):
-    day = IntegerField("day", validators=[])
 
 
 # 封禁用户

@@ -50,7 +50,7 @@ class Account(db.Model):
     info        = db.Column(db.TEXT,comment="一些额外的信息")
     create_at   = db.Column(db.DateTime,default=datetime.datetime.now(),comment="创建时间")
 
-    admin_aid   = db.Column(db.Integer,db.ForeignKey("admins_user.aid"),comment="操作员工id")
+    admin_id   = db.Column(db.Integer,db.ForeignKey("admins_user.aid"),comment="操作员工id")
     open_at     = db.Column(db.DateTime,comment="操作时间")
 
     # sqlalchemy orm特有的关系条件,不存在数据库表中,只是在存在实例中
@@ -162,10 +162,14 @@ class Account(db.Model):
             "username": self.username,
             "info": self.info,
             "status": self.status,
-            "create_at": self.create_at.strftime('%Y-%m-%d %H:%M:%S'),
+            "create_at": self.exis_time_is_null()
         }
         return item
 
+    def exis_time_is_null(self):
+        if self.create_at == None:
+            return ""
+        return self.create_at.strftime('%Y-%m-%d %H:%M:%S')
 
     def query_Teachers(self,page=1,number=10):
         if page == None :
@@ -199,31 +203,28 @@ class Account(db.Model):
 
     def prohibit_user(self,admin_aid):
         u = self.get_aid_user()
+        if u == None:
+            return False
         u.status = self.BannedUsersStatus
-        u.admin_aid = admin_aid
+        u.admin_id = admin_aid
         u.open_at = datetime.datetime.now()
         return u.up_commit()
 
     def reduction_prohibit_user(self,admin_aid):
 
-        status = 0
         u = self.query.filter_by(aid=self.aid).first()
         if u == None:
             return False
-
-        if len(u.curriculum) == 0:
-            status = self.RegisteredUsersStudentStatus
-        else:
-            status = self.RegisteredUsersTeacherStatus
-
-        u.status = status
-        u.admin_aid =admin_aid
+        u.status = self.RegisteredUsersStudentStatus
+        u.admin_id =admin_aid
         u.open_at = datetime.datetime.now()
         return u.up_commit()
 
     def get_prohibit_users(self,page=1,number=10):
-        page if page ==None else 1
-        number if number == None else 10
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
 
         users = self.query.filter(Account.status == self.BannedUsersStatus).paginate(int(page),int(number),False)
 
@@ -259,15 +260,21 @@ class Account(db.Model):
 
 
     def get_registry_counts(self):
-        count = self.query.filter.count()
-        return {"count":count}
+        sql = """
+            select count(*) as count from accounts
+        """
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items[0]
 
 
     def get_users(self,page=1,number=10):
-        page if page == None else 1
-        number if number == None else 10
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
 
-        users = self.query.filter.paginate(int(page),int(number),False)
+        users = self.query.filter().paginate(int(page),int(number),False)
 
         items = {}
         list_item = []

@@ -29,7 +29,7 @@ class Admin_Users(db.Model):
     pswd = db.Column(db.String(255),comment="密码")
     status = db.Column(db.Integer,comment="身份状态 0为未激活,1激活成功可使用,9离职(其他)")  # tinyint
     create_at = db.Column(db.DateTime,default=datetime.datetime.now())
-    r_id = db.Column(db.Integer,comment="权限id")
+    r_id = db.Column(db.Integer,db.ForeignKey("admin_roles.r_id"),comment="权限id")
 
 
 
@@ -45,18 +45,21 @@ class Admin_Users(db.Model):
     def __init__(self,aid=None,username=None,pswd=None,status=None,r_id=None):
         self.aid = aid
         self.username = username
-        self.pswd =pswd if status == None else self.default_pswd
-        self.status = status if status == None else self.status_lever_1
+        if status == None:
+            self.pswd = self.default_pswd
+        if status == None:
+            self.status = self.status_lever_1
         self.create_at = datetime.datetime.now()
-        self.r_id = r_id if r_id == None else 1
+        if r_id:
+            self.r_id = 1
 
     def serializetion_json(self):
         item = {
-            self.aid : self.aid,
-            self.username : self.username,
-            self.status : self.status ,
-            self.create_at : self.exis_time_is_null(),
-            self.r_id : self.r_id
+            "aid" : self.aid,
+            "username" : self.username,
+            "status" : self.status ,
+            "ct" : self.exis_time_is_null(),
+            "rid" : self.r_id
         }
         return item
 
@@ -65,10 +68,9 @@ class Admin_Users(db.Model):
             return ""
         return self.create_at.strftime("%Y-%m-%d %H:%M:%S")
 
-
     def is_commit(self):
         try:
-            db.seesion.add(self)
+            db.session.add(self)
             db.session.commit()
             return True
         except Exception as e:
@@ -85,8 +87,8 @@ class Admin_Users(db.Model):
 
 
     def save(self):
-        self.set_pswd()
-        self.get_pswd()
+        self.r_id if self.r_id == None else 1
+        self.set_pswd(self.pswd)
         return self.is_commit()
 
 
@@ -107,6 +109,8 @@ class Admin_Users(db.Model):
 
     def check_login_user_pswd(self,input_pswd):
         u = self.get_user_activation()
+        if u == None:
+            return u,False
         return u,u.check_pswd(input_pswd)
 
     def modify_pswd(self,now_pswd):
@@ -117,23 +121,31 @@ class Admin_Users(db.Model):
         list_status = [self.status_lever_2,self.status_lever_3,self.status_lever_1]
         return self.status in list_status
 
-    def modift_auth_status(self,status):
-        if status not in [1,2,3]:
+    def modift_auth_status(self,r_id):
+        if int(r_id) not in [1,2,3]:
             return False
-        self.status = status
+        if int(r_id) == self.r_id:
+            return False
+        self.r_id = r_id
         return self.up_commit()
 
-    def get_unactivation_accounts(self,page=None,number=None):
-        page if page == None else 1
-        number if number == None else 10
+    def get_unactivation_accounts(self,page=None,number=None,r_id=None):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        if r_id == None:
+            r_id = 9
+        elif r_id == 9:
+            r_id = 10
 
-        us = self.query.filter_by(status=self.status_lever_1).paginate(int(page),int(number),False)
+        us = self.query.filter(Admin_Users.status==self.status_lever_1,Admin_Users.r_id<r_id).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
         for u in us.items:
-            list_item.append(u.serializetion_json)
+            list_item.append(u.serializetion_json())
 
         items["datas"] = list_item
         items["pages"] = us.pages
@@ -142,17 +154,23 @@ class Admin_Users(db.Model):
 
         return items
 
-    def get_leave_accounts(self,page=None,number=None):
-        page if page == None else 1
-        number if number == None else 10
+    def get_leave_accounts(self,page=None,number=None,r_id=None):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        if r_id == None:
+            r_id = 1
+        elif r_id == 9:
+            r_id = 10
 
-        us = self.query.filter_by(status=self.status_lever_3).paginate(int(page),int(number),False)
+        us = self.query.filter(Admin_Users.status==self.status_lever_3,Admin_Users.r_id<r_id).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
         for u in us.items:
-            list_item.append(u.serializetion_json)
+            list_item.append(u.serializetion_json())
 
         items["datas"] = list_item
         items["pages"] = us.pages
@@ -161,17 +179,47 @@ class Admin_Users(db.Model):
 
         return items
 
-    def get_all_accounts(self,page=None,number=None):
-        page if page == None else 1
-        number if number == None else 10
-
-        us = self.query.filter.paginate(int(page),int(number),False)
+    def get_all_accounts(self,page=None,number=None,r_id=None):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        if r_id == None:
+            r_id = 1
+        elif r_id == 9:
+            r_id = 10
+        us = self.query.filter(Admin_Users.status==self.status_lever_2,Admin_Users.r_id<r_id).paginate(int(page),int(number),False)
 
         items = {}
         list_item = []
 
         for u in us.items:
-            list_item.append(u.serializetion_json)
+            list_item.append(u.serializetion_json())
+
+        items["datas"] = list_item
+        items["pages"] = us.pages
+        items["total"] = us.total
+        items["len"] = len(us.items)
+
+        return items
+
+    def get_all_unaccounts(self,page=None,number=None,r_id=None):
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        if r_id == None:
+            r_id = 1
+        elif r_id == 9:
+            r_id = 10
+
+        us = self.query.filter(Admin_Users.status==self.status_lever_1,Admin_Users.r_id<r_id).paginate(int(page),int(number),False)
+
+        items = {}
+        list_item = []
+
+        for u in us.items:
+            list_item.append(u.serializetion_json())
 
         items["datas"] = list_item
         items["pages"] = us.pages
@@ -202,10 +250,8 @@ class Admin_Users(db.Model):
     def get_create_At(self):
         return self.create_at.strftime('%Y-%m-%d %H:%M:%S')
 
-    def get_pswd(self):
-        return self.pswd
-    def set_pswd(self,pswd=None):
-        self.pswd = encryption(pswd if pswd == None else self.pswd)
+    def set_pswd(self,pswd):
+        self.pswd = encryption(pswd)
     def check_pswd(self,input):
         return check_pswd(self.pswd,input)
     def get_rid(self):

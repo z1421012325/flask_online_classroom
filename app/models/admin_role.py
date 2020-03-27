@@ -2,7 +2,7 @@
 
 import datetime
 from OnlineClassroom.app.ext.plugins import db
-from .admin_user import *
+from .admin_user import Admin_Users
 
 # 员工权限表
 """

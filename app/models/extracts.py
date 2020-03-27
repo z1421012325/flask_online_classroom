@@ -5,6 +5,8 @@ from OnlineClassroom.app.utils.get_uuid import *
 
 from .money import Money
 
+from OnlineClassroom.app.utils.sql_result import sql_result_to_dict
+
 """
 金额提取
 CREATE TABLE `extracts` (
@@ -125,3 +127,21 @@ class Extracts(db.Model):
 
 
 
+    def get_day_sum_money(self,day):
+        sql = """
+            select date_format(create_at,'%Y-%m-%d')as dateDay,sum(t_money) as moneyDay from extracts group by dateDay order by dateDay limit 0,{}
+        """.format(day)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items
+
+
+    def get_teacher_royalty_money(self,day):
+        sql = """ 
+        select date_format(create_at,'%Y-%m-%d') as dateDay ,sum(actual_money) as money_total from extracts group by dateDay order by dateDay desc limit 0,{}
+        """.format(day)
+
+        results = db.session.execute(sql).fetchall()
+        items = sql_result_to_dict(results)
+        return items

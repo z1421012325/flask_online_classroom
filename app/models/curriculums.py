@@ -44,7 +44,7 @@ class Curriculums(db.Model):
     create_at = db.Column(db.DateTime,default=datetime.datetime.now(), comment="创建时间")
     delete_at = db.Column(db.DateTime, comment="删除时间")
 
-    admin_aid = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
+    admin_id = db.Column(db.Integer, db.ForeignKey("admins_user.aid"), comment="操作员工id")
     open_at = db.Column(db.DateTime, comment="操作时间")
 
     catalogs = db.relationship(Catalog,backref="curriculum")
@@ -93,16 +93,26 @@ class Curriculums(db.Model):
 
     # 查询多个课程并返回dict
     def query_curriculums_is_not_del(self,page=None,number=None):
-        page if page == None else 1
-        number if number == None else 10
+        if page ==None:
+            page = 1
+        if number == None:
+            number = 10
 
         items = {}
         list_item = []
-
         cs = self.query.filter_by(delete_at=None).paginate(int(page),int(number),False)
-
         for c in cs.items:
-            list_item.append(c.serialize_item())
+            item =  {
+            "aid":c.aid,
+            "cid": c.cid,
+            "cname": c.cname,
+            "price": str(c.price),
+            "info": c.info,
+            "cimage": c.completion_oss_img_url(),
+            "create_at": c.json_time_is_null(),
+            "delete_at":c.json_time_is_null()
+                }
+            list_item.append(item)
 
         items["datas"] = list_item
         items["len"] = len(cs.items)
@@ -131,8 +141,8 @@ class Curriculums(db.Model):
             "price": str(self.price),
             "info": self.info,
             "cimage": self.completion_oss_img_url(),
-            "create_at": self.json_time_is_null(self.create_at),
-            "delete_at":self.json_time_is_null(self.delete_at)
+            "create_at": self.json_time_is_null(),
+            "delete_at":self.json_time_is_null()
         }
         return item
 
@@ -141,10 +151,10 @@ class Curriculums(db.Model):
             return ""
         return self.user.nickname
 
-    def json_time_is_null(self,f_time):
-        if f_time == None:
+    def json_time_is_null(self):
+        if self.create_at == None:
             return ""
-        return f_time.strftime('%Y-%m-%d %H:%M:%S')
+        return self.create_at.strftime('%Y-%m-%d %H:%M:%S')
 
     def query_modify_curriculum_people(self):
         c = self.query.filter_by(cid=self.cid,delete_at=None).first()
@@ -405,10 +415,11 @@ class Curriculums(db.Model):
         return items
 
     def get_curriculums(self,page=1,number=10):
-        page if page == None else 1
-        number if number == None else 10
-
-        cs = self.query.filter.paginate(int(page),int(number),False)
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
+        cs = self.query.filter().paginate(int(page),int(number),False)
         items = {}
         list_item = []
 
@@ -424,28 +435,30 @@ class Curriculums(db.Model):
 
 
     def get_del_curriculums(self,page=1,number=10):
-        page if page == None else 1
-        number if number == None else 10
+        if page == None:
+            page = 1
+        if number == None:
+            number = 10
 
         cs = self.query.filter(Curriculums.delete_at!=None).paginate(int(page),int(number),False)
         items = {}
         list_item = []
 
         for c in cs.items:
-            list_item.append(item = {
-                    "aid":c.aid,
-                    "nickname":c.json_relation_user_nickname_is_null(),
-                    "cid": c.cid,
-                    "cname": c.cname,
-                    "price": str(c.price),
-                    "info": c.info,
-                    "cimage": c.completion_oss_img_url(),
-                    "create_at": c.json_time_is_null(self.create_at),
-                    "delete_at":c.json_time_is_null(self.delete_at),
-                    "admin_aid":c.admin_aid,
-                    "open_at": c.json_time_is_null(self.open_at)
-            })
-
+            item = {
+                "aid": c.aid,
+                "nickname": c.json_relation_user_nickname_is_null(),
+                "cid": c.cid,
+                "cname": c.cname,
+                "price": str(c.price),
+                "info": c.info,
+                "cimage": c.completion_oss_img_url(),
+                "create_at": c.json_time_is_null(),
+                "delete_at": c.json_time_is_null(),
+                "admin_aid": c.admin_id,
+                "open_at": c.json_time_is_null()
+            }
+            list_item.append(item)
         items['datas'] = list_item
         items['len'] = len(cs.items)
         items["pages"] = cs.pages
@@ -454,15 +467,24 @@ class Curriculums(db.Model):
         return items
 
     def admin_del_video(self,admin_aid):
-        c = self.query.filter_by(aid=self.aid).first()
+        c = self.query.filter_by(cid=self.cid).first()
+        if c == None:
+            return False
         c.delete_at = datetime.datetime.now()
-        c.admin_aid = admin_aid
+        c.admin_id = admin_aid
         c.open_at = datetime.datetime.now()
         return c.up_commit()
 
     def admin_adopt_video(self,admin_aid):
-        c = self.query.filter_by(aid=self.aid).first()
+        c = self.query.filter_by(cid=self.cid).first()
+        print("\n\n\n",c)
+        if c == None:
+            return False
         c.delete_at = None
-        c.admin_aid = admin_aid
+        c.admin_id = admin_aid
         c.open_at = datetime.datetime.now()
         return c.up_commit()
+
+    def get_curriculums_count(self):
+        count = self.query.filter(Curriculums.delete_at==None).count()
+        return {"count":count}
